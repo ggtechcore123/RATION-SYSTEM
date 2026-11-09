@@ -41,6 +41,12 @@ The server will start at:
 - **API Health**: [http://localhost:5000/api/health](http://localhost:5000/api/health)
 - **WebSocket Feed**: `ws://localhost:5000/ws/live`
 
+Keep the `npm start` terminal open while using the portal. If the browser reports
+"Failed to fetch", confirm the API Health URL above responds with `"status":"ONLINE"`.
+Do not open an HTML file directly from disk; use `http://localhost:5000` so the
+frontend and API are served by the application server.
+In Windows PowerShell, use `npm.cmd start` if script execution blocks `npm start`.
+
 ---
 
 ## 4. Default Login Credentials
@@ -81,4 +87,3 @@ smart-pds/
 ├── firebase/               # Firestore security rules, storage rules & indexes
 └── docs/                   # Setup and architecture documentation
 ```
-

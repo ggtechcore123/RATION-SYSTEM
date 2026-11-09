@@ -3,12 +3,16 @@
  * Client API Library & Global Helper Functions
  */
 
-// Automatically route API requests to port 5000 if opened via Five Server / Live Server
+// Route local static-server and file:// requests to the local API server.
 const BACKEND_PORT = 5000;
+const isFileProtocol = window.location.protocol === 'file:';
 const isDevLiveServer = window.location.port && window.location.port !== String(BACKEND_PORT);
-const API_BASE = isDevLiveServer
-  ? `${window.location.protocol}//${window.location.hostname}:${BACKEND_PORT}/api`
-  : '/api';
+const localBackendOrigin = `http://${isFileProtocol ? 'localhost' : window.location.hostname}:${BACKEND_PORT}`;
+const API_BASE = isFileProtocol
+  ? `${localBackendOrigin}/api`
+  : isDevLiveServer
+    ? `${window.location.protocol}//${window.location.hostname}:${BACKEND_PORT}/api`
+    : '/api';
 
 // Toast Notifications
 function showToast(message, type = 'info', duration = 3500) {
@@ -74,6 +78,9 @@ async function apiRequest(endpoint, options = {}) {
     return data;
   } catch (error) {
     console.error(`API Error on ${endpoint}:`, error.message);
+    if (error instanceof TypeError && error.message === 'Failed to fetch') {
+      throw new Error(`Cannot reach the API at ${url}. Start the backend with "npm start" and open the portal at http://localhost:${BACKEND_PORT}.`);
+    }
     throw error;
   }
 }
@@ -88,7 +95,11 @@ class LiveFeed {
 
   connect() {
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const wsHost = isDevLiveServer ? `${window.location.hostname}:${BACKEND_PORT}` : window.location.host;
+    const wsHost = isFileProtocol
+      ? `localhost:${BACKEND_PORT}`
+      : isDevLiveServer
+        ? `${window.location.hostname}:${BACKEND_PORT}`
+        : window.location.host;
     const wsUrl = `${protocol}//${wsHost}/ws/live`;
 
     try {
