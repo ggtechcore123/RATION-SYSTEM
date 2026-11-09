@@ -87,6 +87,14 @@ app.get('/api/health', (req, res) => {
   });
 });
 
+// API 404 Catch-All Handler (ensures all /api calls return JSON, never HTML)
+app.use('/api', (req, res) => {
+  res.status(404).json({
+    success: false,
+    message: `API endpoint not found: ${req.method} ${req.originalUrl}`
+  });
+});
+
 // Fallback to index.html for navigation
 app.get('*', (req, res, next) => {
   if (req.path.startsWith('/api') || req.path.startsWith('/ws')) {

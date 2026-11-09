@@ -69,17 +69,40 @@ async function apiRequest(endpoint, options = {}) {
 
   try {
     const response = await fetch(url, { ...options, headers });
-    const data = await response.json();
+    const contentType = response.headers.get('content-type') || '';
+
+    let data;
+    if (contentType.includes('application/json')) {
+      data = await response.json();
+    } else {
+      const rawText = await response.text();
+      if (rawText.trim().startsWith('<')) {
+        throw new Error(`API returned an HTML response (${response.status}) instead of JSON. Ensure the Node.js backend server is running on port ${BACKEND_PORT}.`);
+      }
+      try {
+        data = JSON.parse(rawText);
+      } catch (e) {
+        throw new Error(rawText || `Invalid response from server (${response.status})`);
+      }
+    }
 
     if (!response.ok) {
-      throw new Error(data.message || `Request failed with status ${response.status}`);
+      throw new Error(data && data.message ? data.message : `Request failed with status ${response.status}`);
     }
 
     return data;
   } catch (error) {
-    console.error(`API Error on ${endpoint}:`, error.message);
-    if (error instanceof TypeError && error.message === 'Failed to fetch') {
-      throw new Error(`Cannot reach the API at ${url}. Start the backend with "npm start" and open the portal at http://localhost:${BACKEND_PORT}.`);
+    console.error(`API Error on ${endpoint}:`, error);
+    const msg = error.message || '';
+    if (
+      error instanceof TypeError ||
+      msg.includes('Failed to fetch') ||
+      msg.includes('NetworkError') ||
+      msg.includes('Network request failed') ||
+      msg.includes('HTML response') ||
+      msg.includes('Unexpected token')
+    ) {
+      throw new Error(`Cannot reach the backend API at ${url}. Please ensure the backend is running ("npm start" on port ${BACKEND_PORT}).`);
     }
     throw error;
   }
