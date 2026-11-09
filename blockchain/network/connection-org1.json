@@ -1,0 +1,37 @@
+{
+  "name": "pds-network-org1",
+  "version": "1.0.0",
+  "client": {
+    "organization": "Org1",
+    "connection": {
+      "timeout": {
+        "peer": {
+          "endorser": "300"
+        }
+      }
+    }
+  },
+  "organizations": {
+    "Org1": {
+      "mspid": "Org1MSP",
+      "peers": [
+        "peer0.org1.pds.gov.in"
+      ],
+      "certificateAuthorities": [
+        "ca.org1.pds.gov.in"
+      ]
+    }
+  },
+  "peers": {
+    "peer0.org1.pds.gov.in": {
+      "url": "grpc://localhost:7051"
+    }
+  },
+  "certificateAuthorities": {
+    "ca.org1.pds.gov.in": {
+      "url": "http://localhost:7054",
+      "caName": "ca-org1"
+    }
+  }
+}
+

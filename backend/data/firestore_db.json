@@ -1,0 +1,663 @@
+{
+  "users": {
+    "admin_master": {
+      "uid": "admin_master",
+      "username": "admin",
+      "email": "admin@pds.gov.in",
+      "passwordHash": "$2a$10$voE4aVpr2NRzgdLx2AnaoOALGBdqUJrY/.J/GgO3Q2li787eESHHq",
+      "role": "admin",
+      "name": "National PDS Chief Administrator",
+      "createdAt": "2026-11-09T03:57:59.043Z",
+      "id": "admin_master"
+    },
+    "OFFICER001": {
+      "uid": "OFFICER001",
+      "username": "raj001",
+      "name": "Raj Kumar",
+      "passwordHash": "$2a$10$SB/1rbAQXZjM6bhEYroQMe3iQY4N5c1ifGPEYdA/RSwSs139KHSce",
+      "role": "officer",
+      "assignedOfficeId": "OFF001",
+      "createdAt": "2026-11-09T03:57:59.105Z",
+      "id": "OFFICER001"
+    },
+    "OFFICER002": {
+      "uid": "OFFICER002",
+      "username": "priya002",
+      "name": "Priya Sharma",
+      "passwordHash": "$2a$10$SB/1rbAQXZjM6bhEYroQMe3iQY4N5c1ifGPEYdA/RSwSs139KHSce",
+      "role": "officer",
+      "assignedOfficeId": "OFF002",
+      "createdAt": "2026-11-09T03:57:59.105Z",
+      "id": "OFFICER002"
+    },
+    "CUST-TN-2025-001": {
+      "uid": "CUST-TN-2025-001",
+      "username": "CUST-TN-2025-001",
+      "name": "Gowtham N K",
+      "rationCardNumber": "RC-TN-772819",
+      "role": "customer",
+      "status": "APPROVED",
+      "assignedOfficeId": "OFF001",
+      "createdAt": "2025-10-01T10:00:00Z",
+      "id": "CUST-TN-2025-001"
+    },
+    "CUST-TN-2025-002": {
+      "uid": "CUST-TN-2025-002",
+      "username": "CUST-TN-2025-002",
+      "name": "Meenakshi Sundaram",
+      "rationCardNumber": "RC-TN-992144",
+      "role": "customer",
+      "status": "APPROVED",
+      "assignedOfficeId": "OFF001",
+      "createdAt": "2025-10-05T11:20:00Z",
+      "id": "CUST-TN-2025-002"
+    },
+    "CUST-TN-2025-003": {
+      "uid": "CUST-TN-2025-003",
+      "username": "CUST-TN-2025-003",
+      "name": "Ramesh Kumar",
+      "rationCardNumber": "RC-TN-441209",
+      "role": "customer",
+      "status": "APPROVED",
+      "assignedOfficeId": "OFF001",
+      "createdAt": "2026-11-09T03:57:59.119Z",
+      "id": "CUST-TN-2025-003"
+    },
+    "OFFICER003": {
+      "uid": "OFFICER003",
+      "username": "gopal2908",
+      "name": "GOPALA KRISHNAN",
+      "passwordHash": "$2a$10$ZX/s0UxCZOBEPLgMidTgv.NadW7BqdW8uYkVf7seMKBa33DsfedU2",
+      "role": "officer",
+      "assignedOfficeId": "OFF003",
+      "createdAt": "2026-11-09T04:45:27.172Z",
+      "id": "OFFICER003"
+    },
+    "OFFICER004": {
+      "uid": "OFFICER004",
+      "username": "saro123",
+      "name": "SARAVANA",
+      "passwordHash": "$2a$10$zSQcTWVpNodH76xld/mie.sCf76TIYP4EplxoVu73IMZfIMrSQTwi",
+      "role": "officer",
+      "assignedOfficeId": "OFF004",
+      "createdAt": "2026-11-09T05:03:21.268Z",
+      "id": "OFFICER004"
+    }
+  },
+  "warehouses": {
+    "WH-C01": {
+      "id": "WH-C01",
+      "name": "Central Warehouse - Food Corporation of India (FCI) Chennai",
+      "type": "CENTRAL",
+      "state": "Tamil Nadu",
+      "district": "Chennai",
+      "capacityTons": 10000,
+      "currentStockTons": 6420,
+      "contactPerson": "K. Balachandran (Depot Manager)",
+      "phone": "044-28334411",
+      "address": "Harbour Estate Godowns, Rajaji Salai, Chennai 600001",
+      "status": "ACTIVE"
+    },
+    "WH-S01": {
+      "id": "WH-S01",
+      "name": "State Buffer Warehouse - TNCSC Madurai",
+      "type": "STATE",
+      "state": "Tamil Nadu",
+      "district": "Madurai",
+      "capacityTons": 5000,
+      "currentStockTons": 3200,
+      "contactPerson": "S. Selvaraj",
+      "phone": "0452-2533881",
+      "address": "Industrial Estate, Kappalur, Madurai 625008",
+      "status": "ACTIVE"
+    },
+    "WH-D01": {
+      "id": "WH-D01",
+      "name": "District Godown - Coimbatore Civil Supplies",
+      "type": "DISTRICT",
+      "state": "Tamil Nadu",
+      "district": "Coimbatore",
+      "capacityTons": 2500,
+      "currentStockTons": 1450,
+      "contactPerson": "V. Sundaram",
+      "phone": "0422-2499101",
+      "address": "Goods Shed Road, Coimbatore 641018",
+      "status": "ACTIVE"
+    }
+  },
+  "offices": {
+    "OFF001": {
+      "id": "OFF001",
+      "officeName": "Chennai Central Fair Price Ration Shop #01",
+      "state": "Tamil Nadu",
+      "district": "Chennai",
+      "taluk": "Tambaram",
+      "village": "Tambaram West",
+      "pincode": "600045",
+      "address": "14, Gandhi Road, Opp. Bus Terminus, Tambaram West, Chennai",
+      "contactNumber": "044-22261900",
+      "assignedOfficerId": "OFFICER001",
+      "assignedOfficerName": "Raj Kumar",
+      "status": "ACTIVE",
+      "totalRegisteredBeneficiaries": 1421,
+      "createdAt": "2026-11-09T03:57:59.046Z",
+      "officeId": "OFF001"
+    },
+    "OFF002": {
+      "id": "OFF002",
+      "officeName": "Madurai South Fair Price Shop #18",
+      "state": "Tamil Nadu",
+      "district": "Madurai",
+      "taluk": "Madurai South",
+      "village": "Villapuram",
+      "pincode": "625012",
+      "address": "88, Meenakshi Nagar Main Road, Madurai",
+      "contactNumber": "0452-2670119",
+      "assignedOfficerId": "OFFICER002",
+      "assignedOfficerName": "Priya Sharma",
+      "status": "ACTIVE",
+      "totalRegisteredBeneficiaries": 980,
+      "createdAt": "2026-11-09T03:57:59.046Z",
+      "officeId": "OFF002"
+    },
+    "OFF003": {
+      "id": "OFF003",
+      "officeName": "Coimbatore North FPS #07",
+      "state": "Tamil Nadu",
+      "district": "Coimbatore",
+      "taluk": "Coimbatore North",
+      "village": "RS Puram",
+      "pincode": "641002",
+      "address": "32, DB Road, RS Puram, Coimbatore",
+      "contactNumber": "0422-2550912",
+      "assignedOfficerId": "OFFICER003",
+      "status": "ACTIVE",
+      "totalRegisteredBeneficiaries": 1150,
+      "createdAt": "2026-11-09T03:57:59.046Z",
+      "assignedOfficerName": "GOPALA KRISHNAN",
+      "officeId": "OFF003"
+    },
+    "OFF004": {
+      "id": "OFF004",
+      "officeId": "OFF004",
+      "officeName": "SARAVANA",
+      "state": "Tamil Nadu",
+      "district": "TIRUPPUR",
+      "taluk": "MADATHUKULAM",
+      "village": "East",
+      "pincode": "642203",
+      "address": "12, Station Road, KANIYUR",
+      "contactNumber": "044-22391009",
+      "assignedOfficerId": "OFFICER004",
+      "assignedOfficerName": "SARAVANA",
+      "status": "ACTIVE",
+      "totalRegisteredBeneficiaries": 0,
+      "createdAt": "2026-11-09T05:02:51.056Z"
+    }
+  },
+  "officers": {
+    "OFFICER001": {
+      "id": "OFFICER001",
+      "officerId": "OFFICER001",
+      "name": "Raj Kumar",
+      "username": "raj001",
+      "passwordHash": "$2a$10$SB/1rbAQXZjM6bhEYroQMe3iQY4N5c1ifGPEYdA/RSwSs139KHSce",
+      "mobileNumber": "+91 98401 22334",
+      "assignedOfficeId": "OFF001",
+      "assignedOfficeName": "Chennai Central Fair Price Ration Shop #01",
+      "officeLocation": "Tambaram, Chennai",
+      "role": "OFFICER",
+      "status": "ACTIVE",
+      "createdAt": "2026-11-09T03:57:59.105Z"
+    },
+    "OFFICER002": {
+      "id": "OFFICER002",
+      "officerId": "OFFICER002",
+      "name": "Priya Sharma",
+      "username": "priya002",
+      "passwordHash": "$2a$10$SB/1rbAQXZjM6bhEYroQMe3iQY4N5c1ifGPEYdA/RSwSs139KHSce",
+      "mobileNumber": "+91 98402 33445",
+      "assignedOfficeId": "OFF002",
+      "assignedOfficeName": "Madurai South Fair Price Shop #18",
+      "officeLocation": "Villapuram, Madurai",
+      "role": "OFFICER",
+      "status": "ACTIVE",
+      "createdAt": "2026-11-09T03:57:59.105Z"
+    },
+    "OFFICER003": {
+      "id": "OFFICER003",
+      "officerId": "OFFICER003",
+      "name": "GOPALA KRISHNAN",
+      "username": "gopal2908",
+      "passwordHash": "$2a$10$ZX/s0UxCZOBEPLgMidTgv.NadW7BqdW8uYkVf7seMKBa33DsfedU2",
+      "mobileNumber": "7708949506",
+      "assignedOfficeId": "OFF003",
+      "assignedOfficeName": "Coimbatore North FPS #07",
+      "officeLocation": "Coimbatore, Tamil Nadu",
+      "role": "OFFICER",
+      "status": "ACTIVE",
+      "createdAt": "2026-11-09T04:45:27.172Z"
+    },
+    "OFFICER004": {
+      "id": "OFFICER004",
+      "officerId": "OFFICER004",
+      "name": "SARAVANA",
+      "username": "saro123",
+      "passwordHash": "$2a$10$zSQcTWVpNodH76xld/mie.sCf76TIYP4EplxoVu73IMZfIMrSQTwi",
+      "mobileNumber": "7708949507",
+      "assignedOfficeId": "OFF004",
+      "assignedOfficeName": "SARAVANA",
+      "officeLocation": "TIRUPPUR, Tamil Nadu",
+      "role": "OFFICER",
+      "status": "ACTIVE",
+      "createdAt": "2026-11-09T05:03:21.268Z"
+    }
+  },
+  "commodities": {
+    "COMM-RICE": {
+      "id": "COMM-RICE",
+      "name": "Rice (Common & Grade A)",
+      "code": "RICE",
+      "unit": "KG",
+      "defaultPricePerKg": 0
+    },
+    "COMM-WHEAT": {
+      "id": "COMM-WHEAT",
+      "name": "Wheat (Whole Grain)",
+      "code": "WHEAT",
+      "unit": "KG",
+      "defaultPricePerKg": 0
+    },
+    "COMM-SUGAR": {
+      "id": "COMM-SUGAR",
+      "name": "Refined Sugar",
+      "code": "SUGAR",
+      "unit": "KG",
+      "defaultPricePerKg": 13.5
+    },
+    "COMM-DAL": {
+      "id": "COMM-DAL",
+      "name": "Toor Dal (Fortified)",
+      "code": "DAL",
+      "unit": "KG",
+      "defaultPricePerKg": 30
+    }
+  },
+  "stockBatches": {
+    "BATCH-RICE-2025-01": {
+      "batchId": "BATCH-RICE-2025-01",
+      "commodityId": "COMM-RICE",
+      "commodityName": "Rice",
+      "warehouseId": "WH-C01",
+      "quantity": 50000,
+      "availableQuantity": 44000,
+      "unit": "KG",
+      "procurementDate": "2025-10-15",
+      "supplier": "Punjab Agro Mandi Board & FCI Procurements",
+      "expiryDate": "2026-10-15",
+      "status": "ACTIVE",
+      "id": "BATCH-RICE-2025-01"
+    },
+    "BATCH-WHEAT-2025-01": {
+      "batchId": "BATCH-WHEAT-2025-01",
+      "commodityId": "COMM-WHEAT",
+      "commodityName": "Wheat",
+      "warehouseId": "WH-C01",
+      "quantity": 30000,
+      "availableQuantity": 27500,
+      "unit": "KG",
+      "procurementDate": "2025-10-18",
+      "supplier": "Madhya Pradesh State Civil Supplies",
+      "expiryDate": "2026-10-18",
+      "status": "ACTIVE",
+      "id": "BATCH-WHEAT-2025-01"
+    },
+    "BATCH-SUGAR-2025-01": {
+      "batchId": "BATCH-SUGAR-2025-01",
+      "commodityId": "COMM-SUGAR",
+      "commodityName": "Sugar",
+      "warehouseId": "WH-C01",
+      "quantity": 10000,
+      "availableQuantity": 9100,
+      "unit": "KG",
+      "procurementDate": "2025-10-20",
+      "supplier": "National Federation of Cooperative Sugar Factories",
+      "expiryDate": "2026-04-20",
+      "status": "ACTIVE",
+      "id": "BATCH-SUGAR-2025-01"
+    },
+    "BATCH-DAL-2025-01": {
+      "batchId": "BATCH-DAL-2025-01",
+      "commodityId": "COMM-DAL",
+      "commodityName": "Dal",
+      "warehouseId": "WH-C01",
+      "quantity": 8000,
+      "availableQuantity": 7300,
+      "unit": "KG",
+      "procurementDate": "2025-10-22",
+      "supplier": "NAFED Pulse Procurement Drive",
+      "expiryDate": "2026-10-22",
+      "status": "ACTIVE",
+      "id": "BATCH-DAL-2025-01"
+    }
+  },
+  "officeInventory": {
+    "OFF001": {
+      "officeId": "OFF001",
+      "inventory": {
+        "rice": 2500,
+        "wheat": 1200,
+        "sugar": 450,
+        "dal": 350
+      },
+      "lastUpdated": "2026-11-09T03:57:59.114Z",
+      "id": "OFF001"
+    },
+    "OFF002": {
+      "officeId": "OFF002",
+      "inventory": {
+        "rice": 1800,
+        "wheat": 900,
+        "sugar": 300,
+        "dal": 220
+      },
+      "lastUpdated": "2026-11-09T03:57:59.115Z",
+      "id": "OFF002"
+    },
+    "OFF003": {
+      "officeId": "OFF003",
+      "inventory": {
+        "rice": 1200,
+        "wheat": 600,
+        "sugar": 200,
+        "dal": 180
+      },
+      "lastUpdated": "2026-11-09T03:57:59.115Z",
+      "id": "OFF003"
+    },
+    "OFF004": {
+      "officeId": "OFF004",
+      "inventory": {
+        "rice": 0,
+        "wheat": 0,
+        "sugar": 0,
+        "dal": 0
+      },
+      "lastUpdated": "2026-11-09T05:02:51.060Z",
+      "id": "OFF004"
+    }
+  },
+  "dispatches": {
+    "DSP-2025-001": {
+      "id": "DSP-2025-001",
+      "dispatchId": "DSP-2025-001",
+      "sourceWarehouseId": "WH-C01",
+      "sourceWarehouseName": "Central Warehouse FCI Chennai",
+      "destinationOfficeId": "OFF001",
+      "destinationOfficeName": "Chennai Central Fair Price Ration Shop #01",
+      "vehicleNumber": "TN-01-AG-4421",
+      "driverDetails": "M. Shanmugam (DL: TN0120110049219, Mob: 9444102911)",
+      "dispatchDate": "2025-11-01",
+      "expectedDeliveryDate": "2025-11-02",
+      "status": "DELIVERED",
+      "remarks": "Monthly quota allocation tranche 1",
+      "items": [
+        {
+          "commodity": "Rice",
+          "batchId": "BATCH-RICE-2025-01",
+          "quantity": 2000,
+          "unit": "KG"
+        },
+        {
+          "commodity": "Wheat",
+          "batchId": "BATCH-WHEAT-2025-01",
+          "quantity": 1000,
+          "unit": "KG"
+        },
+        {
+          "commodity": "Sugar",
+          "batchId": "BATCH-SUGAR-2025-01",
+          "quantity": 500,
+          "unit": "KG"
+        }
+      ],
+      "createdAt": "2025-11-01T08:00:00Z",
+      "deliveredAt": "2025-11-02T10:30:00Z",
+      "confirmedBy": "OFFICER001",
+      "discrepancy": false
+    },
+    "DSP-2025-002": {
+      "id": "DSP-2025-002",
+      "dispatchId": "DSP-2025-002",
+      "sourceWarehouseId": "WH-C01",
+      "sourceWarehouseName": "Central Warehouse FCI Chennai",
+      "destinationOfficeId": "OFF001",
+      "destinationOfficeName": "Chennai Central Fair Price Ration Shop #01",
+      "vehicleNumber": "TN-22-CX-7788",
+      "driverDetails": "K. Parthiban (Mob: 9884019283)",
+      "dispatchDate": "2026-11-09",
+      "expectedDeliveryDate": "2026-11-10",
+      "status": "IN_TRANSIT",
+      "remarks": "Supplemental mid-month buffer tranche",
+      "items": [
+        {
+          "commodity": "Rice",
+          "batchId": "BATCH-RICE-2025-01",
+          "quantity": 1000,
+          "unit": "KG"
+        },
+        {
+          "commodity": "Dal",
+          "batchId": "BATCH-DAL-2025-01",
+          "quantity": 300,
+          "unit": "KG"
+        }
+      ],
+      "createdAt": "2026-11-09T03:57:59.116Z"
+    }
+  },
+  "customers": {
+    "CUST-TN-2025-001": {
+      "id": "CUST-TN-2025-001",
+      "customerId": "CUST-TN-2025-001",
+      "fullName": "Gowtham N K",
+      "dateOfBirth": "1998-04-12",
+      "gender": "Male",
+      "mobileNumber": "+91 98401 99881",
+      "email": "gowtham.beneficiary@gmail.com",
+      "address": "22, Anna Nagar 3rd Cross Street, Tambaram",
+      "state": "Tamil Nadu",
+      "district": "Chennai",
+      "taluk": "Tambaram",
+      "village": "Tambaram West",
+      "pincode": "600045",
+      "rationCardNumber": "RC-TN-772819",
+      "rationCardCategory": "PHH",
+      "familyHeadName": "Gowtham N K",
+      "assignedOfficeId": "OFF001",
+      "assignedOfficeName": "Chennai Central Fair Price Ration Shop #01",
+      "status": "APPROVED",
+      "fingerprintRef": "FP-REF-GOWTHAM01",
+      "fingerprintStatus": "ENROLLED",
+      "familyMembers": [
+        {
+          "memberId": "MEM-01",
+          "fullName": "K. Natesan",
+          "age": 58,
+          "gender": "Male",
+          "relationship": "Father",
+          "occupation": "Retired",
+          "fingerprintRef": "FP-REF-NATESAN01",
+          "fingerprintStatus": "ENROLLED",
+          "status": "ACTIVE"
+        },
+        {
+          "memberId": "MEM-02",
+          "fullName": "N. Kasthuri",
+          "age": 54,
+          "gender": "Female",
+          "relationship": "Mother",
+          "occupation": "Homemaker",
+          "fingerprintRef": "FP-REF-KASTHURI01",
+          "fingerprintStatus": "ENROLLED",
+          "status": "ACTIVE"
+        },
+        {
+          "memberId": "MEM-03",
+          "fullName": "N. Deepa",
+          "age": 24,
+          "gender": "Female",
+          "relationship": "Sister",
+          "occupation": "Student",
+          "fingerprintRef": "FP-REF-DEEPA01",
+          "fingerprintStatus": "ENROLLED",
+          "status": "ACTIVE"
+        }
+      ],
+      "documents": {
+        "rationCardDoc": "/assets/sample-docs/ration-card.pdf",
+        "addressProofDoc": "/assets/sample-docs/aadhaar-sample.pdf",
+        "identityProofDoc": "/assets/sample-docs/voter-sample.pdf"
+      },
+      "createdAt": "2025-10-01T10:00:00Z",
+      "approvedAt": "2025-10-02T14:30:00Z",
+      "approvedBy": "admin_master"
+    },
+    "CUST-TN-2025-002": {
+      "id": "CUST-TN-2025-002",
+      "customerId": "CUST-TN-2025-002",
+      "fullName": "Meenakshi Sundaram",
+      "dateOfBirth": "1975-06-21",
+      "gender": "Female",
+      "mobileNumber": "+91 98402 77112",
+      "email": "meenakshi.s@gmail.com",
+      "address": "15/A, Kamarajar Street, Tambaram",
+      "state": "Tamil Nadu",
+      "district": "Chennai",
+      "taluk": "Tambaram",
+      "village": "Tambaram West",
+      "pincode": "600045",
+      "rationCardNumber": "RC-TN-992144",
+      "rationCardCategory": "AAY",
+      "familyHeadName": "Meenakshi Sundaram",
+      "assignedOfficeId": "OFF001",
+      "assignedOfficeName": "Chennai Central Fair Price Ration Shop #01",
+      "status": "APPROVED",
+      "fingerprintRef": "FP-REF-MEENAKSHI01",
+      "fingerprintStatus": "ENROLLED",
+      "familyMembers": [
+        {
+          "memberId": "MEM-04",
+          "fullName": "M. Senthil",
+          "age": 26,
+          "gender": "Male",
+          "relationship": "Son",
+          "occupation": "Daily Wage Laborer",
+          "fingerprintRef": "FP-REF-SENTHIL01",
+          "fingerprintStatus": "ENROLLED",
+          "status": "ACTIVE"
+        },
+        {
+          "memberId": "MEM-05",
+          "fullName": "M. Revathi",
+          "age": 22,
+          "gender": "Female",
+          "relationship": "Daughter",
+          "occupation": "Unemployed",
+          "fingerprintRef": "FP-REF-REVATHI01",
+          "fingerprintStatus": "ENROLLED",
+          "status": "ACTIVE"
+        }
+      ],
+      "documents": {
+        "rationCardDoc": "/assets/sample-docs/ration-card.pdf",
+        "addressProofDoc": "/assets/sample-docs/aadhaar-sample.pdf"
+      },
+      "createdAt": "2025-10-05T11:20:00Z",
+      "approvedAt": "2025-10-06T09:15:00Z",
+      "approvedBy": "admin_master"
+    },
+    "CUST-TN-2025-003": {
+      "id": "CUST-TN-2025-003",
+      "customerId": "CUST-TN-2025-003",
+      "fullName": "Ramesh Kumar",
+      "dateOfBirth": "1989-11-04",
+      "gender": "Male",
+      "mobileNumber": "+91 97910 44332",
+      "email": "ramesh.k@gmail.com",
+      "address": "42, Nehru Bazaar, Tambaram",
+      "state": "Tamil Nadu",
+      "district": "Chennai",
+      "taluk": "Tambaram",
+      "village": "Tambaram West",
+      "pincode": "600045",
+      "rationCardNumber": "RC-TN-441209",
+      "rationCardCategory": "PHH",
+      "familyHeadName": "Ramesh Kumar",
+      "assignedOfficeId": "OFF001",
+      "assignedOfficeName": "Chennai Central Fair Price Ration Shop #01",
+      "status": "APPROVED",
+      "fingerprintRef": "FP-REF-RAMESH01",
+      "fingerprintStatus": "ENROLLED",
+      "familyMembers": [
+        {
+          "memberId": "MEM-06",
+          "fullName": "Radhika Ramesh",
+          "age": 32,
+          "gender": "Female",
+          "relationship": "Spouse",
+          "occupation": "Tailor",
+          "fingerprintRef": "FP-REF-RADHIKA01",
+          "fingerprintStatus": "ENROLLED",
+          "status": "ACTIVE"
+        }
+      ],
+      "documents": {
+        "rationCardDoc": "/assets/sample-docs/ration-card.pdf",
+        "addressProofDoc": "/assets/sample-docs/aadhaar-sample.pdf"
+      },
+      "createdAt": "2026-11-09T03:57:59.119Z",
+      "approvedAt": "2026-11-09T04:43:08.281Z",
+      "approvedBy": "admin_master",
+      "rejectionReason": null
+    }
+  },
+  "distributions": {
+    "DIST-2025-001": {
+      "id": "DIST-2025-001",
+      "distributionId": "DIST-2025-001",
+      "customerId": "CUST-TN-2025-001",
+      "rationCardNumber": "RC-TN-772819",
+      "category": "PHH",
+      "beneficiaryName": "Gowtham N K",
+      "monthKey": "2026-11",
+      "officeId": "OFF001",
+      "officerId": "OFFICER001",
+      "officerName": "Raj Kumar",
+      "biometricVerificationRef": "BIO-AUTH-SEED-VERIFIED-01",
+      "authenticatedMember": "Gowtham N K (Head)",
+      "items": [
+        {
+          "commodity": "Rice",
+          "quantity": 10,
+          "unit": "KG",
+          "price": 0
+        },
+        {
+          "commodity": "Wheat",
+          "quantity": 4,
+          "unit": "KG",
+          "price": 0
+        },
+        {
+          "commodity": "Sugar",
+          "quantity": 1,
+          "unit": "KG",
+          "price": 13.5
+        }
+      ],
+      "totalAmountPaid": 13.5,
+      "timestamp": "2026-11-09T03:57:59.122Z"
+    }
+  }
+}

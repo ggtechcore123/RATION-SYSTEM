@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fair Price Shop Officer Sign-In & ESP32 Terminal Setup | Smart PDS India</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .conn-tab-btn {
+      flex: 1;
+      padding: 10px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      border: 1px solid var(--border-color);
+      background: #F8FAFC;
+      color: var(--text-muted);
+      cursor: pointer;
+      border-radius: var(--radius-sm);
+      transition: all 0.2s ease;
+    }
+    .conn-tab-btn.active {
+      background: #0052CC;
+      color: white;
+      border-color: #0052CC;
+    }
+    .status-dot {
+      display: inline-block;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #94A3B8;
+      margin-right: 6px;
+    }
+    .status-dot.connected { background: #00875A; box-shadow: 0 0 8px #00875A; }
+    .status-dot.connecting { background: #FFAB00; animation: blink 1s infinite; }
+    .status-dot.error { background: #DE350B; }
+    @keyframes blink { 50% { opacity: 0.3; } }
+  </style>
+</head>
+<body style="display: flex; flex-direction: column; min-height: 100vh;">
+
+  <!-- Top Strip -->
+  <div class="gov-top-strip">
+    <div>
+      <span>🇮🇳 Government of India | Fair Price Shop (FPS) Dealer Terminal</span>
+    </div>
+    <div>
+      <a href="index.html">← Portal Home</a>
+      <a href="admin-login.html">Admin Portal</a>
+    </div>
+  </div>
+
+  <nav class="navbar">
+    <a href="index.html" class="brand-wrapper">
+      <div class="emblem-icon" style="background: linear-gradient(135deg, #0052CC 0%, #00875A 100%);">🏪</div>
+      <div class="brand-text">
+        <h1>RATION SHOP OFFICER LOGIN & POS TERMINAL</h1>
+        <p>FAIR PRICE SHOP (FPS) POINT-OF-SALE (POS) ACCESS</p>
+      </div>
+    </a>
+  </nav>
+
+  <div style="flex: 1; display: flex; align-items: center; justify-content: center; padding: 40px 20px;">
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 28px; width: 100%; max-width: 920px;">
+
+      <!-- LEFT: OFFICER AUTHENTICATION CARD -->
+      <div class="card" style="padding: 36px; border-top: 5px solid var(--blue-primary);">
+        <div style="text-align: center; margin-bottom: 24px;">
+          <div style="width: 56px; height: 56px; background: var(--blue-light); color: var(--blue-primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.6rem; margin: 0 auto 12px auto;">
+            👨‍💼
+          </div>
+          <h2 style="font-size: 1.4rem; color: var(--navy-primary); font-weight: 700;">FPS Officer Sign-In</h2>
+          <p style="font-size: 0.85rem; color: var(--text-muted);">Access your assigned Fair Price Shop distribution terminal.</p>
+        </div>
+
+        <form id="officer-login-form">
+          <div class="form-group" style="margin-bottom: 18px;">
+            <label class="form-label">Officer ID or Username <span class="req">*</span></label>
+            <input type="text" id="officer-username" class="form-control" value="raj001" placeholder="e.g. raj001 or OFFICER001" required>
+          </div>
+
+          <div class="form-group" style="margin-bottom: 24px;">
+            <label class="form-label">Password <span class="req">*</span></label>
+            <input type="password" id="officer-password" class="form-control" value="Password123!" placeholder="Enter officer password" required>
+          </div>
+
+          <button type="submit" class="btn btn-primary btn-block btn-lg" id="login-submit-btn" style="background-color: var(--blue-primary);">
+            Sign In to Fair Price Shop →
+          </button>
+        </form>
+
+        <div style="margin-top: 24px; padding: 12px; background: #F8FAFC; border: 1px dashed var(--border-color); border-radius: var(--radius-sm); font-size: 0.8rem; color: var(--text-muted); text-align: center;">
+          <strong>Pre-Registered Test Officer:</strong><br>
+          Officer: <code>raj001</code> | Password: <code>Password123!</code><br>
+          Assigned Shop: <strong>OFF001 - Chennai Central FPS #01</strong>
+        </div>
+      </div>
+
+      <!-- RIGHT: ESP32 BIOMETRIC HARDWARE CONNECTION CARD -->
+      <div class="card" style="padding: 36px; border-top: 5px solid var(--green-primary); display: flex; flex-direction: column; justify-content: space-between;">
+        <div>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span style="font-size: 1.4rem;">📟</span>
+              <h3 style="font-size: 1.2rem; color: var(--navy-primary); font-weight: 700;">ESP32 POS Hardware Link</h3>
+            </div>
+            <div style="display: flex; align-items: center; font-size: 0.8rem; font-weight: 600;">
+              <span class="status-dot" id="login-hardware-dot"></span>
+              <span id="login-hardware-status-text">Disconnected</span>
+            </div>
+          </div>
+
+          <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 18px;">
+            Connect your physical ESP32 terminal (with R307 Optical Sensor & Keypad) using either a USB Cable or via local WiFi Network IP:
+          </p>
+
+          <!-- Toggle Connection Method -->
+          <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+            <button type="button" class="conn-tab-btn active" id="btn-tab-usb" onclick="setConnectionTab('USB')">
+              🔌 USB Cable (Serial COM)
+            </button>
+            <button type="button" class="conn-tab-btn" id="btn-tab-ip" onclick="setConnectionTab('IP')">
+              📶 WiFi IP Address
+            </button>
+          </div>
+
+          <!-- TAB 1: USB CABLE CONNECTION -->
+          <div id="panel-conn-usb">
+            <div style="background: #F8FAFC; border: 1px solid var(--border-color); border-radius: 6px; padding: 16px; margin-bottom: 16px;">
+              <div style="font-size: 0.85rem; color: var(--navy-primary); font-weight: 600; margin-bottom: 6px;">
+                🔌 Direct USB Cable Link (Web Serial)
+              </div>
+              <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 14px;">
+                Plug ESP32 into computer USB port. Uses browser native Web Serial (115200 Baud) to stream R307 biometric scans and keypad inputs directly.
+              </p>
+              <button type="button" class="btn btn-success btn-block" id="btn-connect-usb" onclick="handleConnectUSB()">
+                Select USB Port & Connect
+              </button>
+            </div>
+            <div id="usb-info-box" style="display: none; font-size: 0.8rem; background: #E3FCEF; color: #006644; padding: 10px 14px; border-radius: 4px; border: 1px solid #ABF5D1;">
+              ✓ ESP32 Connected via USB Serial! Ready for distribution.
+            </div>
+          </div>
+
+          <!-- TAB 2: NETWORK IP ADDRESS CONNECTION -->
+          <div id="panel-conn-ip" style="display: none;">
+            <div style="background: #F8FAFC; border: 1px solid var(--border-color); border-radius: 6px; padding: 16px; margin-bottom: 16px;">
+              <div style="font-size: 0.85rem; color: var(--navy-primary); font-weight: 600; margin-bottom: 6px;">
+                📶 Local WiFi Network IP
+              </div>
+              <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 12px;">
+                Enter the local IP address assigned to your ESP32 on the ration shop WiFi:
+              </p>
+              <div class="form-group" style="margin-bottom: 12px;">
+                <input type="text" id="esp32-ip-input" class="form-control" placeholder="e.g. 192.168.1.150 or 192.168.4.1" value="192.168.1.150">
+              </div>
+              <button type="button" class="btn btn-primary btn-block" style="background-color: var(--blue-primary);" id="btn-connect-ip" onclick="handleConnectIP()">
+                Ping & Connect to ESP32 IP
+              </button>
+            </div>
+            <div id="ip-info-box" style="display: none; font-size: 0.8rem; background: #E3FCEF; color: #006644; padding: 10px 14px; border-radius: 4px; border: 1px solid #ABF5D1;">
+              ✓ ESP32 WiFi IP Connected!
+            </div>
+          </div>
+        </div>
+
+        <div style="font-size: 0.78rem; color: var(--text-muted); border-top: 1px solid var(--border-color); padding-top: 14px;">
+          Note: If hardware is currently unplugged, the terminal will operate in <strong>Built-in Virtual Simulator mode</strong> automatically.
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <footer class="gov-footer" style="padding: 16px 24px;">
+    <div class="footer-bottom" style="padding: 0; border: none;">
+      <p>© 2026 National Smart PDS Portal. Point-of-Sale Security: Assigned Shop Isolation Enforced.</p>
+    </div>
+  </footer>
+
+  <script src="js/api.js"></script>
+  <script src="js/esp32-connection.js"></script>
+  <script>
+    // Tab switching for connection
+    function setConnectionTab(mode) {
+      document.getElementById('btn-tab-usb').className = mode === 'USB' ? 'conn-tab-btn active' : 'conn-tab-btn';
+      document.getElementById('btn-tab-ip').className = mode === 'IP' ? 'conn-tab-btn active' : 'conn-tab-btn';
+      document.getElementById('panel-conn-usb').style.display = mode === 'USB' ? 'block' : 'none';
+      document.getElementById('panel-conn-ip').style.display = mode === 'IP' ? 'block' : 'none';
+    }
+
+    // Hardware status listener
+    window.esp32Bridge.onStatusChange((status, details) => {
+      const dot = document.getElementById('login-hardware-dot');
+      const text = document.getElementById('login-hardware-status-text');
+
+      if (status === 'CONNECTED') {
+        dot.className = 'status-dot connected';
+        text.textContent = details.mode === 'USB' ? 'USB Port Connected' : `WiFi IP Connected (${details.ip || ''})`;
+        text.style.color = 'var(--green-primary)';
+      } else if (status === 'CONNECTING') {
+        dot.className = 'status-dot connecting';
+        text.textContent = 'Connecting...';
+        text.style.color = 'var(--amber-text)';
+      } else {
+        dot.className = 'status-dot';
+        text.textContent = 'Disconnected';
+        text.style.color = 'var(--text-muted)';
+      }
+    });
+
+    // Handle Connect USB
+    async function handleConnectUSB() {
+      const btn = document.getElementById('btn-connect-usb');
+      try {
+        btn.disabled = true;
+        btn.textContent = 'Connecting via USB...';
+        await window.esp32Bridge.connectUSB();
+        btn.textContent = '✓ USB Connected';
+        document.getElementById('usb-info-box').style.display = 'block';
+        showToast('ESP32 connected via USB cable! Settings saved for session.', 'success');
+      } catch (err) {
+        btn.disabled = false;
+        btn.textContent = 'Select USB Port & Connect';
+        showToast(err.message, 'error');
+      }
+    }
+
+    // Handle Connect IP
+    async function handleConnectIP() {
+      const ip = document.getElementById('esp32-ip-input').value.trim();
+      const btn = document.getElementById('btn-connect-ip');
+      if (!ip) {
+        showToast('Please enter ESP32 IP address', 'warning');
+        return;
+      }
+      try {
+        btn.disabled = true;
+        btn.textContent = 'Pinging IP...';
+        await window.esp32Bridge.connectIP(ip);
+        btn.disabled = false;
+        btn.textContent = '✓ WiFi IP Connected';
+        document.getElementById('ip-info-box').style.display = 'block';
+        showToast(`ESP32 WiFi IP (${ip}) connected!`, 'success');
+      } catch (err) {
+        btn.disabled = false;
+        btn.textContent = 'Ping & Connect to ESP32 IP';
+        showToast(`Connection failed: ${err.message}`, 'error');
+      }
+    }
+
+    // Login Form Submit
+    const form = document.getElementById('officer-login-form');
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const username = document.getElementById('officer-username').value.trim();
+      const password = document.getElementById('officer-password').value;
+      const btn = document.getElementById('login-submit-btn');
+
+      btn.disabled = true;
+      btn.textContent = 'Verifying shop assignment...';
+
+      try {
+        const res = await apiRequest('/auth/officer-login', {
+          method: 'POST',
+          body: JSON.stringify({ username, password })
+        });
+
+        if (res.success && res.token) {
+          localStorage.setItem('pds_officer_token', res.token);
+          localStorage.setItem('pds_officer_info', JSON.stringify(res.officer));
+          showToast(`Welcome, Officer ${res.officer.name}! Opening terminal...`, 'success');
+          setTimeout(() => {
+            window.location.href = 'officer-dashboard.html';
+          }, 800);
+        }
+      } catch (err) {
+        btn.disabled = false;
+        btn.textContent = 'Sign In to Fair Price Shop →';
+        showToast(err.message || 'Login failed. Please check officer credentials.', 'error');
+      }
+    });
+  </script>
+</body>
+</html>

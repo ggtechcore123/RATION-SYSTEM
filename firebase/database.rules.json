@@ -1,0 +1,21 @@
+{
+  "rules": {
+    ".read": "auth != null",
+    ".write": "auth != null && auth.token.role === 'admin'",
+    "iotTelemetry": {
+      "$deviceId": {
+        ".read": "auth != null",
+        ".write": "auth != null"
+      }
+    },
+    "publicStatistics": {
+      ".read": true,
+      ".write": "auth != null && auth.token.role === 'admin'"
+    },
+    "liveLedgerHeight": {
+      ".read": true,
+      ".write": "auth != null && auth.token.role === 'admin'"
+    }
+  }
+}
+

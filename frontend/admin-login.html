@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Portal Sign-In | Smart PDS India</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body style="display: flex; flex-direction: column; min-height: 100vh;">
+
+  <!-- Top Strip -->
+  <div class="gov-top-strip">
+    <div>
+      <span>🇮🇳 Government of India | National PDS Administrative Command</span>
+    </div>
+    <div>
+      <a href="index.html">← Portal Home</a>
+      <a href="officer-login.html">FPS Officer Login</a>
+    </div>
+  </div>
+
+  <nav class="navbar">
+    <a href="index.html" class="brand-wrapper">
+      <div class="emblem-icon">⚙️</div>
+      <div class="brand-text">
+        <h1>ADMIN COMMAND CONSOLE</h1>
+        <p>NATIONAL PUBLIC DISTRIBUTION SYSTEM</p>
+      </div>
+    </a>
+  </nav>
+
+  <div style="flex: 1; display: flex; align-items: center; justify-content: center; padding: 40px 20px;">
+    <div class="card" style="width: 100%; max-width: 440px; padding: 36px; border-top: 5px solid var(--navy-primary);">
+      <div style="text-align: center; margin-bottom: 24px;">
+        <div style="width: 56px; height: 56px; background: #E6EDF5; color: var(--navy-primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.6rem; margin: 0 auto 12px auto;">
+          🔐
+        </div>
+        <h2 style="font-size: 1.4rem; color: var(--navy-primary); font-weight: 700;">Administrator Login</h2>
+        <p style="font-size: 0.85rem; color: var(--text-muted);">Enter authorized central/state administrative credentials.</p>
+      </div>
+
+      <form id="admin-login-form">
+        <div class="form-group" style="margin-bottom: 18px;">
+          <label class="form-label">Username or Official Email <span class="req">*</span></label>
+          <input type="text" id="admin-username" class="form-control" value="admin" placeholder="e.g. admin or admin@pds.gov.in" required>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 24px;">
+          <label class="form-label">Password <span class="req">*</span></label>
+          <input type="password" id="admin-password" class="form-control" value="AdminPassword123!" placeholder="Enter secure password" required>
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-block btn-lg" id="login-submit-btn">
+          Authenticate & Enter Dashboard →
+        </button>
+      </form>
+
+      <div style="margin-top: 24px; padding: 12px; background: #F8FAFC; border: 1px dashed var(--border-color); border-radius: var(--radius-sm); font-size: 0.8rem; color: var(--text-muted); text-align: center;">
+        <strong>Default Credentials for Review:</strong><br>
+        Username: <code>admin</code> | Password: <code>AdminPassword123!</code>
+      </div>
+    </div>
+  </div>
+
+  <footer class="gov-footer" style="padding: 16px 24px;">
+    <div class="footer-bottom" style="padding: 0; border: none;">
+      <p>© 2026 National Smart PDS Portal. Security Layer: AES-256 + Role-Based Access Control.</p>
+    </div>
+  </footer>
+
+  <script src="js/api.js"></script>
+  <script>
+    const form = document.getElementById('admin-login-form');
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const username = document.getElementById('admin-username').value.trim();
+      const password = document.getElementById('admin-password').value;
+      const btn = document.getElementById('login-submit-btn');
+
+      btn.disabled = true;
+      btn.textContent = 'Verifying credentials...';
+
+      try {
+        const res = await apiRequest('/auth/admin-login', {
+          method: 'POST',
+          body: JSON.stringify({ username, password })
+        });
+
+        if (res.success && res.token) {
+          localStorage.setItem('pds_admin_token', res.token);
+          localStorage.setItem('pds_admin_user', JSON.stringify(res.user));
+          showToast('Authentication successful! Loading Admin Console...', 'success');
+          setTimeout(() => {
+            window.location.href = 'admin-dashboard.html';
+          }, 800);
+        }
+      } catch (err) {
+        btn.disabled = false;
+        btn.textContent = 'Authenticate & Enter Dashboard →';
+        showToast(err.message || 'Login failed. Please check credentials.', 'error');
+      }
+    });
+  </script>
+</body>
+</html>
+

@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fair Price Shop Officer POS Terminal | Smart PDS India</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- Top Strip -->
+  <div class="gov-top-strip">
+    <div>
+      <span>🇮🇳 Government of India | Fair Price Shop Distribution Point-of-Sale (POS)</span>
+    </div>
+    <div style="display: flex; align-items: center; gap: 16px;">
+      <span style="color: #36B37E;">● POS Terminal ESP32 Connected</span>
+      <span id="officer-name-display" style="color: white; font-weight: 600;">Officer</span>
+      <button onclick="logoutOfficer()" class="btn btn-outline btn-sm" style="color: #FF8F73; border-color: rgba(255,255,255,0.2); padding: 2px 8px;">Logout</button>
+    </div>
+  </div>
+
+  <!-- Office Banner Header -->
+  <div style="background: linear-gradient(90deg, #0A2540 0%, #0052CC 100%); color: white; padding: 18px 32px; box-shadow: var(--shadow-sm); display: flex; justify-content: space-between; align-items: center;">
+    <div>
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <span class="badge badge-success">ACTIVE TERMINAL</span>
+        <h2 style="font-size: 1.35rem; font-weight: 700;" id="banner-office-name">Chennai Central Fair Price Shop #01</h2>
+      </div>
+      <p style="font-size: 0.85rem; color: #B3C2D4; margin-top: 4px;">
+        OFFICE ID: <strong id="banner-office-id" style="color: white; font-family: var(--font-mono);">OFF001</strong> |
+        LOCATION: <strong id="banner-office-loc" style="color: white;">Tambaram, Chennai</strong> |
+        AUTHORIZED OFFICER: <strong id="banner-officer-name" style="color: #36B37E;">Raj Kumar</strong>
+      </p>
+    </div>
+    <div>
+      <button class="btn btn-success btn-sm" onclick="switchOfficerTab('verification')">👆 New Citizen Biometric Login</button>
+    </div>
+  </div>
+
+  <div class="dashboard-wrapper">
+
+    <!-- OFFICER SIDEBAR -->
+    <aside class="sidebar">
+      <div>
+        <div class="sidebar-header">
+          <h2>FPS POS TERMINAL</h2>
+          <p>Assigned Office Operations</p>
+        </div>
+
+        <ul class="sidebar-menu">
+          <li class="sidebar-item active" id="menu-off-dashboard">
+            <a href="javascript:void(0)" onclick="switchOfficerTab('dashboard')">📊 Office Overview</a>
+          </li>
+          <li class="sidebar-item" id="menu-off-receive">
+            <a href="javascript:void(0)" onclick="switchOfficerTab('receive')">📦 Receive Inward Stock</a>
+          </li>
+          <li class="sidebar-item" id="menu-off-verification">
+            <a href="javascript:void(0)" onclick="switchOfficerTab('verification')">👆 Citizen Biometric POS</a>
+          </li>
+          <li class="sidebar-item" id="menu-off-distribution">
+            <a href="javascript:void(0)" onclick="switchOfficerTab('distribution')">🛒 Ration Distribution</a>
+          </li>
+          <li class="sidebar-item" id="menu-off-history">
+            <a href="javascript:void(0)" onclick="switchOfficerTab('history')">📜 Distribution History</a>
+          </li>
+          <li class="sidebar-item" id="menu-off-stock">
+            <a href="javascript:void(0)" onclick="switchOfficerTab('stock')">🌾 Available Shop Stock</a>
+          </li>
+          <li class="sidebar-item" id="menu-off-blockchain">
+            <a href="javascript:void(0)" onclick="switchOfficerTab('blockchain')">⛓️ Office Blockchain Proofs</a>
+          </li>
+        </ul>
+      </div>
+
+      <div style="padding: 16px 24px; border-top: 1px solid rgba(255,255,255,0.08); font-size: 0.75rem; color: #798EAA;">
+        Device Token: <code>DEV-OFF001-ESP32-SECURE</code><br>
+        Role: Authorized FPS Dealer
+      </div>
+    </aside>
+
+    <!-- MAIN OFFICER CONTENT -->
+    <main class="main-content">
+
+      <!-- ==================== TAB 1: OVERVIEW ==================== -->
+      <section id="tab-off-dashboard" class="officer-tab-pane">
+        <div class="content-header">
+          <div>
+            <h1>Fair Price Shop Daily Telemetry</h1>
+            <p style="color: var(--text-muted); font-size: 0.88rem;">Current inventory balance, pending delivery shipments, and today's ration distribution tally.</p>
+          </div>
+          <div>
+            <button class="btn btn-outline btn-sm" onclick="loadOfficerDashboardData()">🔄 Refresh</button>
+          </div>
+        </div>
+
+        <!-- KPI CARDS -->
+        <div class="kpi-grid">
+          <div class="kpi-card">
+            <div class="kpi-info">
+              <h5>Total Available Shop Stock</h5>
+              <div class="kpi-value" id="off-kpi-availableStock">0 KG</div>
+            </div>
+            <div class="kpi-icon" style="background: #E3FCEF; color: var(--green-primary);">🌾</div>
+          </div>
+
+          <div class="kpi-card">
+            <div class="kpi-info">
+              <h5>Received Shipments (Tons)</h5>
+              <div class="kpi-value" id="off-kpi-receivedStock">0 KG</div>
+            </div>
+            <div class="kpi-icon" style="background: #DEEBFF; color: var(--blue-primary);">🚚</div>
+          </div>
+
+          <div class="kpi-card">
+            <div class="kpi-info">
+              <h5>In-Transit Dispatches</h5>
+              <div class="kpi-value" id="off-kpi-pendingDispatch" style="color: var(--blue-primary);">0</div>
+            </div>
+            <div class="kpi-icon" style="background: #FFF0B3; color: var(--amber-text);">📦</div>
+          </div>
+
+          <div class="kpi-card">
+            <div class="kpi-info">
+              <h5>Registered Beneficiaries</h5>
+              <div class="kpi-value" id="off-kpi-totalCustomers">0</div>
+            </div>
+            <div class="kpi-icon" style="background: #EAE6FF; color: #5243AA;">👥</div>
+          </div>
+
+          <div class="kpi-card">
+            <div class="kpi-info">
+              <h5>Today's Total Distribution</h5>
+              <div class="kpi-value" id="off-kpi-todayDistribution">0 KG</div>
+            </div>
+            <div class="kpi-icon" style="background: #E3FCEF; color: var(--green-primary);">🛒</div>
+          </div>
+
+          <div class="kpi-card">
+            <div class="kpi-info">
+              <h5>Remaining Monthly Quota to Issue</h5>
+              <div class="kpi-value" id="off-kpi-remainingStock">--</div>
+            </div>
+            <div class="kpi-icon" style="background: #FFEBE6; color: var(--red-primary);">⏳</div>
+          </div>
+
+          <div class="kpi-card" style="grid-column: span 2;">
+            <div class="kpi-info">
+              <h5>Office Blockchain Audit Commitments</h5>
+              <div class="kpi-value" id="off-kpi-blockchainCount" style="color: var(--green-primary);">0</div>
+            </div>
+            <div class="kpi-icon" style="background: #E3FCEF; color: var(--green-primary);">⛓️</div>
+          </div>
+        </div>
+
+        <!-- Current Shop Commodity Stock Cards -->
+        <h3 style="font-size: 1.1rem; color: var(--navy-primary); margin-bottom: 14px;">Real-Time Fair Price Shop Stock Balance</h3>
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; margin-bottom: 28px;">
+          <div class="card" style="border-left: 4px solid #00875A;">
+            <h5 style="color: var(--text-muted); font-size: 0.8rem; text-transform: uppercase;">Rice (Grade A)</h5>
+            <div style="font-size: 1.6rem; font-weight: 800; color: var(--navy-primary); font-family: var(--font-mono); margin: 6px 0;" id="off-stock-rice">0 KG</div>
+            <span style="font-size: 0.75rem; color: var(--green-primary); font-weight: 600;">Free / ₹0 per KG</span>
+          </div>
+          <div class="card" style="border-left: 4px solid #0052CC;">
+            <h5 style="color: var(--text-muted); font-size: 0.8rem; text-transform: uppercase;">Wheat (Whole Grain)</h5>
+            <div style="font-size: 1.6rem; font-weight: 800; color: var(--navy-primary); font-family: var(--font-mono); margin: 6px 0;" id="off-stock-wheat">0 KG</div>
+            <span style="font-size: 0.75rem; color: var(--blue-primary); font-weight: 600;">Free / ₹0 per KG</span>
+          </div>
+          <div class="card" style="border-left: 4px solid #FFAB00;">
+            <h5 style="color: var(--text-muted); font-size: 0.8rem; text-transform: uppercase;">Refined Sugar</h5>
+            <div style="font-size: 1.6rem; font-weight: 800; color: var(--navy-primary); font-family: var(--font-mono); margin: 6px 0;" id="off-stock-sugar">0 KG</div>
+            <span style="font-size: 0.75rem; color: var(--amber-text); font-weight: 600;">Subsidized ₹13.50/KG</span>
+          </div>
+          <div class="card" style="border-left: 4px solid #DE350B;">
+            <h5 style="color: var(--text-muted); font-size: 0.8rem; text-transform: uppercase;">Toor Dal</h5>
+            <div style="font-size: 1.6rem; font-weight: 800; color: var(--navy-primary); font-family: var(--font-mono); margin: 6px 0;" id="off-stock-dal">0 KG</div>
+            <span style="font-size: 0.75rem; color: var(--red-text); font-weight: 600;">Subsidized ₹30.00/KG</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==================== TAB 2: RECEIVE STOCK ==================== -->
+      <section id="tab-off-receive" class="officer-tab-pane" style="display: none;">
+        <div class="content-header">
+          <div>
+            <h1>Inward Stock Receipts & Weigh-In</h1>
+            <p style="color: var(--text-muted); font-size: 0.88rem;">Inspect incoming shipments dispatched to this office. Enter physical received quantities to acknowledge or trigger a discrepancy investigation.</p>
+          </div>
+        </div>
+
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Dispatch ID</th>
+                <th>Source Warehouse</th>
+                <th>Vehicle No</th>
+                <th>Driver Details</th>
+                <th>Dispatched Items</th>
+                <th>Dispatch Date</th>
+                <th>Status</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="off-receive-table-body">
+              <!-- Populated dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ==================== TAB 3: CUSTOMER VERIFICATION (ESP32 KEYPAD + BIOMETRICS) ==================== -->
+      <section id="tab-off-verification" class="officer-tab-pane" style="display: none;">
+        <div class="content-header">
+          <div>
+            <h1>Biometric Customer Identification (ESP32 POS)</h1>
+            <p style="color: var(--text-muted); font-size: 0.88rem;">Step 1: Enter Customer ID or Ration Card via Keypad. Step 2: Customer places finger on optical sensor.</p>
+          </div>
+        </div>
+
+        <!-- Hardware Connection Status Bar -->
+        <div class="card" style="margin-bottom: 20px; padding: 14px 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; background: #FFFFFF; border-left: 4px solid var(--blue-primary);">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <span style="font-size: 1.2rem;">📟</span>
+            <div>
+              <strong style="color: var(--navy-primary); font-size: 0.92rem;">ESP32 POS Hardware Link:</strong>
+              <span id="pos-hw-status-text" style="font-size: 0.85rem; color: var(--text-muted); margin-left: 6px;">Operating in Virtual Simulator Mode</span>
+            </div>
+          </div>
+          <div style="display: flex; gap: 8px;">
+            <button type="button" class="btn btn-outline btn-sm" id="pos-btn-connect-usb" onclick="handleDashboardConnectUSB()">
+              🔌 Connect USB Cable (Serial)
+            </button>
+            <button type="button" class="btn btn-outline btn-sm" id="pos-btn-connect-ip" onclick="handleDashboardConnectIP()">
+              📶 Connect WiFi IP
+            </button>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 28px;">
+
+          <!-- Left: ESP32 Hardware POS Keypad Terminal Simulator -->
+          <div class="card" style="text-align: center; background: #0A2540; color: white;">
+            <div style="margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;">
+              <span class="badge badge-success">ESP32 POS TERMINAL</span>
+              <span style="font-size: 0.75rem; color: #798EAA;" id="pos-hw-port-label">READY (USB/IP/SIM)</span>
+            </div>
+
+            <!-- 16x2 Character LCD Simulator -->
+            <div style="background: #2B4C28; color: #80FF72; font-family: var(--font-mono); padding: 14px; border-radius: 4px; border: 3px solid #1A2E18; margin-bottom: 20px; text-align: left; box-shadow: inset 0 0 10px rgba(0,0,0,0.6);">
+              <div id="lcd-line-1" style="font-size: 0.95rem; font-weight: bold; letter-spacing: 1px;">ENTER CUST/RC ID:</div>
+              <div id="lcd-line-2" style="font-size: 1.15rem; font-weight: bold; margin-top: 4px; letter-spacing: 1.5px;">> <span id="lcd-input-display">CUST-TN-2025-001</span></div>
+            </div>
+
+            <!-- Numeric Keypad Grid -->
+            <div class="pos-keypad-grid">
+              <button class="keypad-btn" onclick="pressKeypad('1')">1</button>
+              <button class="keypad-btn" onclick="pressKeypad('2')">2</button>
+              <button class="keypad-btn" onclick="pressKeypad('3')">3</button>
+
+              <button class="keypad-btn" onclick="pressKeypad('4')">4</button>
+              <button class="keypad-btn" onclick="pressKeypad('5')">5</button>
+              <button class="keypad-btn" onclick="pressKeypad('6')">6</button>
+
+              <button class="keypad-btn" onclick="pressKeypad('7')">7</button>
+              <button class="keypad-btn" onclick="pressKeypad('8')">8</button>
+              <button class="keypad-btn" onclick="pressKeypad('9')">9</button>
+
+              <button class="keypad-btn action-clear" onclick="pressKeypad('CLEAR')">CLR</button>
+              <button class="keypad-btn" onclick="pressKeypad('0')">0</button>
+              <button class="keypad-btn action-enter" onclick="pressKeypad('ENTER')">ENT ↵</button>
+            </div>
+
+            <p style="font-size: 0.78rem; color: #8F9CAE; margin-top: 14px;">
+              Quick Presets:
+              <a href="javascript:void(0)" onclick="setKeypadInput('CUST-TN-2025-001')" style="color: #36B37E; text-decoration: none; margin-left: 6px;">Gowtham (PHH)</a> |
+              <a href="javascript:void(0)" onclick="setKeypadInput('CUST-TN-2025-002')" style="color: #36B37E; text-decoration: none; margin-left: 6px;">Meenakshi (AAY)</a>
+            </p>
+          </div>
+
+          <!-- Right: Optical Fingerprint Sensor Prism -->
+          <div class="card" style="text-align: center; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 36px;">
+            <div class="fingerprint-touchpad" id="pos-fp-touchpad" onclick="triggerPOSBiometricAuth()">
+              👆
+            </div>
+
+            <div style="margin-bottom: 12px;">
+              <span class="badge badge-warning" id="pos-auth-badge">READY FOR FINGERPRINT</span>
+            </div>
+
+            <h3 id="pos-auth-title" style="font-size: 1.25rem; color: var(--navy-primary); margin-bottom: 8px;">
+              Place Beneficiary Finger on Prism
+            </h3>
+            <p id="pos-auth-desc" style="font-size: 0.85rem; color: var(--text-muted); max-width: 360px; margin-bottom: 20px;">
+              The Adafruit R307 optical sensor extracts biometric minutiae and compares against enrolled family references on the secure backend.
+            </p>
+
+            <button class="btn btn-success btn-lg" onclick="triggerPOSBiometricAuth()">
+              Scan Fingerprint & Verify Beneficiary
+            </button>
+
+            <!-- Verification Outcome Box -->
+            <div id="pos-auth-outcome" style="display: none; width: 100%; margin-top: 24px; padding: 18px; border-radius: var(--radius-sm); text-align: left;"></div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- ==================== TAB 4: RATION DISTRIBUTION ==================== -->
+      <section id="tab-off-distribution" class="officer-tab-pane" style="display: none;">
+        <div class="content-header">
+          <div>
+            <h1>Family-Based Ration Entitlement & Distribution</h1>
+            <p style="color: var(--text-muted); font-size: 0.88rem;">Automated quota calculation based on NFSA approved category (PHH/AAY/OPHH) and enrolled family members.</p>
+          </div>
+        </div>
+
+        <div id="dist-container">
+          <!-- Active Beneficiary Banner -->
+          <div class="card" style="margin-bottom: 24px; border-left: 5px solid var(--green-primary);">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <div>
+                <span class="badge badge-success" id="dist-verified-badge">AUTHENTICATED BENEFICIARY</span>
+                <h2 style="font-size: 1.4rem; color: var(--navy-primary); margin-top: 6px;" id="dist-beneficiary-name">Gowtham N K</h2>
+                <p style="font-size: 0.85rem; color: var(--text-muted);">
+                  Customer ID: <strong id="dist-cust-id">CUST-TN-2025-001</strong> |
+                  Ration Card: <strong id="dist-card-no">RC-TN-772819</strong> |
+                  Category: <strong id="dist-category" style="color: var(--green-primary);">Priority Household (PHH)</strong>
+                </p>
+              </div>
+              <div style="text-align: right;">
+                <div style="font-size: 0.78rem; color: var(--text-muted);">Biometric Proof Ref:</div>
+                <code id="dist-bio-ref" style="font-size: 0.82rem; color: var(--navy-primary);">BIO-AUTH-VERIFIED-01</code>
+              </div>
+            </div>
+          </div>
+
+          <!-- Family Member Table -->
+          <div class="card" style="margin-bottom: 24px;">
+            <h3 style="font-size: 1.05rem; color: var(--navy-primary); margin-bottom: 12px;">Enrolled Family Unit (Entitlement Determinants)</h3>
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Member ID</th>
+                    <th>Full Name</th>
+                    <th>Relationship</th>
+                    <th>Age</th>
+                    <th>Biometric Status</th>
+                    <th>Entitlement Status</th>
+                  </tr>
+                </thead>
+                <tbody id="dist-family-tbody">
+                  <!-- Populated dynamically -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Distribution Quota Table & Officer Input -->
+          <div class="card">
+            <h3 style="font-size: 1.1rem; color: var(--navy-primary); margin-bottom: 8px;">Commodity Entitlement & Issuance Schedule</h3>
+            <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 16px;">
+              System checks shop inventory and remaining monthly entitlement to prevent excess distribution. Partial pickups are supported.
+            </p>
+
+            <div class="table-responsive" style="margin-bottom: 20px;">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Commodity</th>
+                    <th>Monthly Quota</th>
+                    <th>Already Received This Month</th>
+                    <th>Remaining Entitlement</th>
+                    <th>Available in Shop</th>
+                    <th style="width: 150px;">Distribute Qty (KG)</th>
+                    <th>Rate / KG</th>
+                    <th>Item Total</th>
+                  </tr>
+                </thead>
+                <tbody id="dist-items-tbody">
+                  <!-- Populated dynamically -->
+                </tbody>
+              </table>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-color); padding-top: 18px;">
+              <div style="font-size: 1.15rem; font-weight: 700; color: var(--navy-primary);">
+                Total Amount Payable: <span id="dist-total-amount" style="color: var(--green-primary);">₹0.00</span>
+              </div>
+              <button class="btn btn-success btn-lg" onclick="executeRationDistribution()">
+                Confirm Distribution & Issue Receipt ↵
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==================== TAB 5: DISTRIBUTION HISTORY ==================== -->
+      <section id="tab-off-history" class="officer-tab-pane" style="display: none;">
+        <div class="content-header">
+          <div>
+            <h1>Office Ration Distribution History</h1>
+            <p style="color: var(--text-muted); font-size: 0.88rem;">Complete log of completed beneficiary handovers conducted by this office.</p>
+          </div>
+        </div>
+
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Receipt No</th>
+                <th>Beneficiary Name</th>
+                <th>Customer ID</th>
+                <th>Ration Card</th>
+                <th>Issued Items</th>
+                <th>Amount Paid</th>
+                <th>Biometric Ref</th>
+                <th>Timestamp</th>
+                <th>Receipt</th>
+              </tr>
+            </thead>
+            <tbody id="off-history-tbody">
+              <!-- Populated dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ==================== TAB 6: AVAILABLE STOCK ==================== -->
+      <section id="tab-off-stock" class="officer-tab-pane" style="display: none;">
+        <div class="content-header">
+          <div>
+            <h1>Fair Price Shop Inventory Ledger</h1>
+            <p style="color: var(--text-muted); font-size: 0.88rem;">Current physical grain stocks available for citizen allocation.</p>
+          </div>
+        </div>
+
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Commodity Code</th>
+                <th>Commodity Name</th>
+                <th>Available Balance (KG)</th>
+                <th>Standard NFSA Subsidized Rate</th>
+                <th>Storage Health</th>
+              </tr>
+            </thead>
+            <tbody id="off-stock-table-body">
+              <!-- Populated dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ==================== TAB 7: BLOCKCHAIN PROOFS ==================== -->
+      <section id="tab-off-blockchain" class="officer-tab-pane" style="display: none;">
+        <div class="content-header">
+          <div>
+            <h1>Fair Price Shop Blockchain Transaction Records</h1>
+            <p style="color: var(--text-muted); font-size: 0.88rem;">All inward stock receipts and citizen distributions committed to Hyperledger Fabric for this shop.</p>
+          </div>
+          <a href="blockchain-explorer.html" class="btn btn-outline btn-sm" target="_blank">Open Public Blockchain Explorer ↗</a>
+        </div>
+
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Block #</th>
+                <th>Transaction Hash</th>
+                <th>Action</th>
+                <th>Status</th>
+                <th>Timestamp</th>
+                <th>Verify</th>
+              </tr>
+            </thead>
+            <tbody id="off-bc-tbody">
+              <!-- Populated dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- Inward Stock Receive Modal -->
+  <div class="modal-overlay" id="modal-confirm-receipt">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3>Confirm Inward Stock Delivery & Weigh-In</h3>
+        <button class="modal-close-btn" onclick="closeModal('modal-confirm-receipt')">&times;</button>
+      </div>
+      <div id="receive-modal-content"></div>
+      <div class="form-group" style="margin-top: 16px;">
+        <label class="form-label">Weigh-Bridge Remarks / Notes:</label>
+        <input type="text" id="rec-remarks" class="form-control" placeholder="All bag seals intact and verified">
+      </div>
+      <div style="margin-top: 24px; display: flex; justify-content: flex-end; gap: 12px;">
+        <button type="button" class="btn btn-outline" onclick="closeModal('modal-confirm-receipt')">Cancel</button>
+        <button type="button" class="btn btn-success" onclick="submitInwardReceiptConfirmation()">Confirm Delivery & Update Inventory</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/api.js"></script>
+  <script src="js/esp32-connection.js"></script>
+  <script src="js/officer-dashboard.js"></script>
+</body>
+</html>
+

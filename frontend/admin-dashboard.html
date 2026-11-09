@@ -1,0 +1,817 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Command Console | Smart PDS India</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+  <!-- Top Strip -->
+  <div class="gov-top-strip">
+    <div>
+      <span>🇮🇳 Government of India | National PDS Central Command Console</span>
+    </div>
+    <div style="display: flex; align-items: center; gap: 16px;">
+      <span style="color: #36B37E;">● Hyperledger Fabric (pdschannel) Online</span>
+      <span id="admin-user-display" style="color: white; font-weight: 600;">Admin</span>
+      <button onclick="logoutAdmin()" class="btn btn-outline btn-sm" style="color: #FF8F73; border-color: rgba(255,255,255,0.2); padding: 2px 8px;">Logout</button>
+    </div>
+  </div>
+
+  <div class="dashboard-wrapper">
+
+    <!-- ADMIN SIDEBAR -->
+    <aside class="sidebar">
+      <div>
+        <div class="sidebar-header">
+          <h2>ADMIN CONSOLE</h2>
+          <p>Targeted Public Distribution System</p>
+        </div>
+
+        <ul class="sidebar-menu">
+          <li class="sidebar-item active" id="menu-dashboard">
+            <a href="javascript:void(0)" onclick="switchAdminTab('dashboard')">📊 Overview Dashboard</a>
+          </li>
+
+          <div class="sidebar-heading">Customer Management</div>
+          <li class="sidebar-item" id="menu-customers">
+            <a href="javascript:void(0)" onclick="switchAdminTab('customers')">👥 Beneficiary Applications</a>
+          </li>
+          <li class="sidebar-item" id="menu-families">
+            <a href="javascript:void(0)" onclick="switchAdminTab('families')">👨‍👩‍👧‍👦 Family & Biometric Records</a>
+          </li>
+
+          <div class="sidebar-heading">Office & Personnel</div>
+          <li class="sidebar-item" id="menu-offices">
+            <a href="javascript:void(0)" onclick="switchAdminTab('offices')">🏪 Fair Price Offices</a>
+          </li>
+          <li class="sidebar-item" id="menu-officers">
+            <a href="javascript:void(0)" onclick="switchAdminTab('officers')">👨‍💼 Ration Shop Officers</a>
+          </li>
+
+          <div class="sidebar-heading">Supply Chain & Inventory</div>
+          <li class="sidebar-item" id="menu-warehouses">
+            <a href="javascript:void(0)" onclick="switchAdminTab('warehouses')">🏢 Warehouses & Buffer Godowns</a>
+          </li>
+          <li class="sidebar-item" id="menu-stock">
+            <a href="javascript:void(0)" onclick="switchAdminTab('stock')">🌾 Grain Stock & Batches</a>
+          </li>
+          <li class="sidebar-item" id="menu-dispatches">
+            <a href="javascript:void(0)" onclick="switchAdminTab('dispatches')">🚚 Office Stock Dispatches</a>
+          </li>
+          <li class="sidebar-item" id="menu-distributions">
+            <a href="javascript:void(0)" onclick="switchAdminTab('distributions')">🛒 Beneficiary Distributions</a>
+          </li>
+
+          <div class="sidebar-heading">Ledger & Intelligence</div>
+          <li class="sidebar-item" id="menu-blockchain">
+            <a href="javascript:void(0)" onclick="switchAdminTab('blockchain')">⛓️ Blockchain Ledger & Provenance</a>
+          </li>
+          <li class="sidebar-item" id="menu-reports">
+            <a href="javascript:void(0)" onclick="switchAdminTab('reports')">📄 Audit Reports & PDF Export</a>
+          </li>
+          <li class="sidebar-item" id="menu-settings">
+            <a href="javascript:void(0)" onclick="switchAdminTab('settings')">⚙️ System Configuration</a>
+          </li>
+        </ul>
+      </div>
+
+      <div style="padding: 16px 24px; border-top: 1px solid rgba(255,255,255,0.08); font-size: 0.75rem; color: #798EAA;">
+        Smart PDS National Node v1.0<br>
+        Security: Role-Based Admin
+      </div>
+    </aside>
+
+    <!-- MAIN CONTENT AREA -->
+    <main class="main-content">
+
+      <!-- ==================== TAB 1: OVERVIEW DASHBOARD ==================== -->
+      <section id="tab-dashboard" class="admin-tab-pane">
+        <div class="content-header">
+          <div>
+            <h1>National PDS Operations Dashboard</h1>
+            <p style="color: var(--text-muted); font-size: 0.88rem;">Real-time telemetry across procurement silos, transit dispatches, Fair Price Shops, and citizen distributions.</p>
+          </div>
+          <div>
+            <button class="btn btn-outline btn-sm" onclick="loadDashboardAnalytics()">🔄 Refresh Telemetry</button>
+          </div>
+        </div>
+
+        <!-- 11 KPI CARDS -->
+        <div class="kpi-grid">
+          <div class="kpi-card">
+            <div class="kpi-info">
+              <h5>Total Registered Customers</h5>
+              <div class="kpi-value" id="kpi-totalCustomers">0</div>
+            </div>
+            <div class="kpi-icon" style="background: #E3FCEF; color: var(--green-primary);">👥</div>
+          </div>
+
+          <div class="kpi-card">
+            <div class="kpi-info">
+              <h5>Total Family Members</h5>
+              <div class="kpi-value" id="kpi-totalFamilyMembers">0</div>
+            </div>
+            <div class="kpi-icon" style="background: #DEEBFF; color: var(--blue-primary);">👨‍👩‍👧‍👦</div>
+          </div>
+
+          <div class="kpi-card">
+            <div class="kpi-info">
+              <h5>Fair Price Offices</h5>
+              <div class="kpi-value" id="kpi-totalOffices">0</div>
+            </div>
+            <div class="kpi-icon" style="background: #EAE6FF; color: #5243AA;">🏪</div>
+          </div>
+
+          <div class="kpi-card">
+            <div class="kpi-info">
+              <h5>Ration Shop Officers</h5>
+              <div class="kpi-value" id="kpi-totalOfficers">0</div>
+            </div>
+            <div class="kpi-icon" style="background: #E6EDF5; color: var(--navy-primary);">👨‍💼</div>
+          </div>
+
+          <div class="kpi-card">
+            <div class="kpi-info">
+              <h5>Buffer Warehouses</h5>
+              <div class="kpi-value" id="kpi-totalWarehouses">0</div>
+            </div>
+            <div class="kpi-icon" style="background: #FFF0B3; color: var(--amber-text);">🏢</div>
+          </div>
+
+          <div class="kpi-card">
+            <div class="kpi-info">
+              <h5>Total Available Stock</h5>
+              <div class="kpi-value" id="kpi-totalStock">0 KG</div>
+            </div>
+            <div class="kpi-icon" style="background: #E3FCEF; color: var(--green-primary);">🌾</div>
+          </div>
+
+          <div class="kpi-card">
+            <div class="kpi-info">
+              <h5>Total Dispatched Stock</h5>
+              <div class="kpi-value" id="kpi-dispatchedStock">0 KG</div>
+            </div>
+            <div class="kpi-icon" style="background: #DEEBFF; color: var(--blue-primary);">🚚</div>
+          </div>
+
+          <div class="kpi-card">
+            <div class="kpi-info">
+              <h5>Total Distributed Stock</h5>
+              <div class="kpi-value" id="kpi-distributedStock">0 KG</div>
+            </div>
+            <div class="kpi-icon" style="background: #EAE6FF; color: #5243AA;">🛒</div>
+          </div>
+
+          <div class="kpi-card">
+            <div class="kpi-info">
+              <h5>Pending Customer Approvals</h5>
+              <div class="kpi-value" id="kpi-pendingApprovals" style="color: var(--amber-text);">0</div>
+            </div>
+            <div class="kpi-icon" style="background: #FFF0B3; color: var(--amber-text);">⏳</div>
+          </div>
+
+          <div class="kpi-card">
+            <div class="kpi-info">
+              <h5>Pending Stock Dispatches</h5>
+              <div class="kpi-value" id="kpi-pendingDispatches" style="color: var(--blue-primary);">0</div>
+            </div>
+            <div class="kpi-icon" style="background: #DEEBFF; color: var(--blue-primary);">📦</div>
+          </div>
+
+          <div class="kpi-card" style="grid-column: span 2;">
+            <div class="kpi-info">
+              <h5>Total Blockchain Transactions (Fabric Ledger)</h5>
+              <div class="kpi-value" id="kpi-blockchainTxs" style="color: var(--green-primary);">0</div>
+            </div>
+            <div class="kpi-icon" style="background: #E3FCEF; color: var(--green-primary);">⛓️</div>
+          </div>
+        </div>
+
+        <!-- CHARTS GRID -->
+        <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 24px; margin-bottom: 28px;">
+          <div class="card">
+            <h3 style="font-size: 1.05rem; margin-bottom: 16px; color: var(--navy-primary);">📈 Monthly Food Grain Distribution Trend (KG)</h3>
+            <div style="height: 280px;">
+              <canvas id="chart-monthlyDistribution"></canvas>
+            </div>
+          </div>
+          <div class="card">
+            <h3 style="font-size: 1.05rem; margin-bottom: 16px; color: var(--navy-primary);">🌾 Commodity-Wise Stock Share</h3>
+            <div style="height: 280px;">
+              <canvas id="chart-commodityStock"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 28px;">
+          <div class="card">
+            <h3 style="font-size: 1.05rem; margin-bottom: 16px; color: var(--navy-primary);">🏪 Office-Wise Distribution (KG)</h3>
+            <div style="height: 260px;">
+              <canvas id="chart-officeDistribution"></canvas>
+            </div>
+          </div>
+          <div class="card">
+            <h3 style="font-size: 1.05rem; margin-bottom: 16px; color: var(--navy-primary);">🏢 Warehouse Buffer Capacity (Tons)</h3>
+            <div style="height: 260px;">
+              <canvas id="chart-warehouseStock"></canvas>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==================== TAB 2: CUSTOMER MANAGEMENT ==================== -->
+      <section id="tab-customers" class="admin-tab-pane" style="display: none;">
+        <div class="content-header">
+          <div>
+            <h1>Beneficiary Applications & Registry</h1>
+            <p style="color: var(--text-muted); font-size: 0.88rem;">Review citizen ration card applications, inspect uploaded documents, and approve or reject.</p>
+          </div>
+          <div style="display: flex; gap: 10px;">
+            <select id="cust-filter-status" class="form-control" style="width: 160px;" onchange="loadCustomersTable()">
+              <option value="">All Statuses</option>
+              <option value="PENDING" selected>Pending Review</option>
+              <option value="APPROVED">Approved</option>
+              <option value="REJECTED">Rejected</option>
+            </select>
+            <input type="text" id="cust-search-input" class="form-control" placeholder="Search name, ID, card..." style="width: 220px;" oninput="loadCustomersTable()">
+          </div>
+        </div>
+
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Customer ID</th>
+                <th>Beneficiary Name</th>
+                <th>Ration Card</th>
+                <th>Category</th>
+                <th>Mobile</th>
+                <th>Assigned Shop</th>
+                <th>Family</th>
+                <th>Biometrics</th>
+                <th>Status</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="customers-table-body">
+              <!-- Populated dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ==================== TAB 3: FAMILY & BIOMETRIC RECORDS ==================== -->
+      <section id="tab-families" class="admin-tab-pane" style="display: none;">
+        <div class="content-header">
+          <div>
+            <h1>Family Management & Biometric Registry</h1>
+            <p style="color: var(--text-muted); font-size: 0.88rem;">Inspect enrolled family members and their optical fingerprint template reference hashes.</p>
+          </div>
+        </div>
+
+        <div class="card" style="margin-bottom: 24px;">
+          <h3 style="font-size: 1.05rem; color: var(--navy-primary); margin-bottom: 12px;">Lookup Beneficiary Family Unit</h3>
+          <div style="display: flex; gap: 12px; max-width: 500px;">
+            <input type="text" id="family-search-id" class="form-control" placeholder="Enter Customer ID (e.g. CUST-TN-2025-001)" value="CUST-TN-2025-001">
+            <button class="btn btn-primary" onclick="lookupFamilyUnit()">Inspect Unit</button>
+          </div>
+        </div>
+
+        <div id="family-unit-display"></div>
+      </section>
+
+      <!-- ==================== TAB 4: OFFICE MANAGEMENT ==================== -->
+      <section id="tab-offices" class="admin-tab-pane" style="display: none;">
+        <div class="content-header">
+          <div>
+            <h1>Fair Price Shop (FPS) Office Management</h1>
+            <p style="color: var(--text-muted); font-size: 0.88rem;">Create and oversee ration distribution offices with automated ID generation.</p>
+          </div>
+          <button class="btn btn-primary" onclick="openCreateOfficeModal()">+ Create New Ration Office</button>
+        </div>
+
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Office ID</th>
+                <th>Office Name</th>
+                <th>Location / District</th>
+                <th>Contact</th>
+                <th>Assigned Officer</th>
+                <th>Current Inventory</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="offices-table-body">
+              <!-- Populated dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ==================== TAB 5: OFFICER MANAGEMENT ==================== -->
+      <section id="tab-officers" class="admin-tab-pane" style="display: none;">
+        <div class="content-header">
+          <div>
+            <h1>Ration Shop Officer Accounts</h1>
+            <p style="color: var(--text-muted); font-size: 0.88rem;">Manage authorized dealers with strict assigned shop access isolation.</p>
+          </div>
+          <button class="btn btn-primary" onclick="openCreateOfficerModal()">+ Create Officer Account</button>
+        </div>
+
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Officer ID</th>
+                <th>Officer Name</th>
+                <th>Username</th>
+                <th>Assigned Office</th>
+                <th>Contact</th>
+                <th>Role</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="officers-table-body">
+              <!-- Populated dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ==================== TAB 6: WAREHOUSES ==================== -->
+      <section id="tab-warehouses" class="admin-tab-pane" style="display: none;">
+        <div class="content-header">
+          <div>
+            <h1>Central, State & District Warehouses</h1>
+            <p style="color: var(--text-muted); font-size: 0.88rem;">FCI and State Civil Supplies grain storage silos and buffer depots.</p>
+          </div>
+        </div>
+
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Warehouse ID</th>
+                <th>Facility Name</th>
+                <th>Type</th>
+                <th>District / State</th>
+                <th>Capacity</th>
+                <th>Active Batches</th>
+                <th>Available Stock</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="warehouses-table-body">
+              <!-- Populated dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ==================== TAB 7: STOCK & BATCH MANAGEMENT ==================== -->
+      <section id="tab-stock" class="admin-tab-pane" style="display: none;">
+        <div class="content-header">
+          <div>
+            <h1>Grain Stock & Procurement Batches</h1>
+            <p style="color: var(--text-muted); font-size: 0.88rem;">Register grain procurements directly into the Hyperledger Fabric ledger.</p>
+          </div>
+          <button class="btn btn-primary" onclick="openAddStockModal()">+ Ingest New Stock Batch</button>
+        </div>
+
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Batch ID</th>
+                <th>Commodity</th>
+                <th>Warehouse</th>
+                <th>Procured Qty</th>
+                <th>Available Qty</th>
+                <th>Procurement Date</th>
+                <th>Supplier / Mandi</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="stock-table-body">
+              <!-- Populated dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ==================== TAB 8: DISPATCH MANAGEMENT ==================== -->
+      <section id="tab-dispatches" class="admin-tab-pane" style="display: none;">
+        <div class="content-header">
+          <div>
+            <h1>Office Stock Dispatches & Transit</h1>
+            <p style="color: var(--text-muted); font-size: 0.88rem;">Dispatch grain shipments from central silos to specific Fair Price Shops.</p>
+          </div>
+          <button class="btn btn-primary" onclick="openCreateDispatchModal()">+ Create Office Dispatch</button>
+        </div>
+
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Dispatch ID</th>
+                <th>Source Warehouse</th>
+                <th>Destination Office</th>
+                <th>Vehicle No</th>
+                <th>Dispatched Items</th>
+                <th>Dispatch Date</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="dispatches-table-body">
+              <!-- Populated dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ==================== TAB 9: BENEFICIARY DISTRIBUTIONS ==================== -->
+      <section id="tab-distributions" class="admin-tab-pane" style="display: none;">
+        <div class="content-header">
+          <div>
+            <h1>Real-Time Citizen Distribution Records</h1>
+            <p style="color: var(--text-muted); font-size: 0.88rem;">Live ledger stream of biometric-authenticated quota handovers.</p>
+          </div>
+        </div>
+
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Receipt No</th>
+                <th>Beneficiary Name</th>
+                <th>Customer ID</th>
+                <th>Ration Card</th>
+                <th>Office ID</th>
+                <th>Distributed Items</th>
+                <th>Biometric Ref</th>
+                <th>Timestamp</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="distributions-table-body">
+              <!-- Populated dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ==================== TAB 10: BLOCKCHAIN LEDGER & PROVENANCE ==================== -->
+      <section id="tab-blockchain" class="admin-tab-pane" style="display: none;">
+        <div class="content-header">
+          <div>
+            <h1>Hyperledger Fabric Cryptographic Ledger</h1>
+            <p style="color: var(--text-muted); font-size: 0.88rem;">Real-time block height, transaction explorer, and batch provenance tracing.</p>
+          </div>
+          <a href="blockchain-explorer.html" class="btn btn-outline btn-sm" target="_blank">Open Full Public Explorer ↗</a>
+        </div>
+
+        <!-- Ledger Network Status Card -->
+        <div class="card" style="background: linear-gradient(135deg, #0A2540 0%, #163860 100%); color: white; margin-bottom: 24px;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+              <span class="badge badge-success" style="margin-bottom: 8px;">Network: pdschannel</span>
+              <h2 style="font-size: 1.4rem;">Hyperledger Fabric Ledger Engine</h2>
+              <p style="font-size: 0.85rem; color: #B3C2D4;">Chaincode: <code>smartpds v1.0</code> | Consensus: Raft | Cryptography: SHA-256 + ECDSA</p>
+            </div>
+            <div style="text-align: right;">
+              <div style="font-size: 2.2rem; font-weight: 800; font-family: var(--font-mono); color: #36B37E;" id="bc-block-height">0</div>
+              <div style="font-size: 0.78rem; color: #B3C2D4; text-transform: uppercase;">Current Block Height</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Batch Provenance Trace Tool -->
+        <div class="card" style="margin-bottom: 24px;">
+          <h3 style="font-size: 1.05rem; color: var(--navy-primary); margin-bottom: 12px;">Trace Grain Supply Chain Batch Provenance</h3>
+          <div style="display: flex; gap: 12px; max-width: 600px;">
+            <input type="text" id="bc-trace-batch-input" class="form-control" placeholder="Enter Batch ID (e.g. BATCH-RICE-2025-01)" value="BATCH-RICE-2025-01">
+            <button class="btn btn-primary" onclick="traceBatchProvenance()">Trace Provenance Timeline</button>
+          </div>
+          <div id="bc-timeline-result" style="margin-top: 20px;"></div>
+        </div>
+
+        <!-- Latest Blocks and Transactions -->
+        <div class="card">
+          <h3 style="font-size: 1.05rem; color: var(--navy-primary); margin-bottom: 16px;">Latest Committed Blockchain Transactions</h3>
+          <div class="table-responsive">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Block #</th>
+                  <th>Transaction Hash</th>
+                  <th>Smart Contract Action</th>
+                  <th>Submitted By</th>
+                  <th>Status</th>
+                  <th>Timestamp</th>
+                  <th>Verify</th>
+                </tr>
+              </thead>
+              <tbody id="bc-transactions-body">
+                <!-- Populated dynamically -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==================== TAB 11: REPORTS & PDF EXPORT ==================== -->
+      <section id="tab-reports" class="admin-tab-pane" style="display: none;">
+        <div class="content-header">
+          <div>
+            <h1>National PDS Audit Reports & Export</h1>
+            <p style="color: var(--text-muted); font-size: 0.88rem;">Generate formal government audit reports for print and distribution.</p>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;">
+          <div class="card">
+            <h4>👥 Beneficiary Registration Report</h4>
+            <p style="font-size: 0.85rem; color: var(--text-muted); margin: 8px 0 16px 0;">Complete directory of all registered, approved, and pending beneficiaries.</p>
+            <button class="btn btn-outline btn-block btn-sm" onclick="exportReport('customers')">Generate & Print Report</button>
+          </div>
+
+          <div class="card">
+            <h4>🏪 Fair Price Shop Stock Report</h4>
+            <p style="font-size: 0.85rem; color: var(--text-muted); margin: 8px 0 16px 0;">Inventory audit across all ration offices including rice, wheat, sugar, and dal.</p>
+            <button class="btn btn-outline btn-block btn-sm" onclick="exportReport('offices')">Generate & Print Report</button>
+          </div>
+
+          <div class="card">
+            <h4>🚚 Supply Chain Dispatch Audit</h4>
+            <p style="font-size: 0.85rem; color: var(--text-muted); margin: 8px 0 16px 0;">Grain movement log with vehicle numbers, transit statuses, and receiving records.</p>
+            <button class="btn btn-outline btn-block btn-sm" onclick="exportReport('dispatches')">Generate & Print Report</button>
+          </div>
+
+          <div class="card">
+            <h4>🛒 Monthly Distribution Log</h4>
+            <p style="font-size: 0.85rem; color: var(--text-muted); margin: 8px 0 16px 0;">All quota issuances, biometric references, and payment receipts.</p>
+            <button class="btn btn-outline btn-block btn-sm" onclick="exportReport('distributions')">Generate & Print Report</button>
+          </div>
+
+          <div class="card">
+            <h4>⛓️ Blockchain Ledger Audit</h4>
+            <p style="font-size: 0.85rem; color: var(--text-muted); margin: 8px 0 16px 0;">Cryptographic proof log showing block numbers, Merkle roots, and Tx hashes.</p>
+            <button class="btn btn-outline btn-block btn-sm" onclick="exportReport('blockchain')">Generate & Print Report</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==================== TAB 12: SETTINGS ==================== -->
+      <section id="tab-settings" class="admin-tab-pane" style="display: none;">
+        <div class="content-header">
+          <div>
+            <h1>System Configuration & Security</h1>
+            <p style="color: var(--text-muted); font-size: 0.88rem;">National PDS parameters, IoT device keys, and cryptographic settings.</p>
+          </div>
+        </div>
+
+        <div class="card" style="max-width: 700px;">
+          <h3 style="font-size: 1.1rem; color: var(--navy-primary); margin-bottom: 16px;">Core Infrastructure Details</h3>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; font-size: 0.88rem;">
+            <div><strong>Database Engine:</strong></div><div>Firebase Firestore (Dual-Mode Local + Cloud)</div>
+            <div><strong>Blockchain Network:</strong></div><div>Hyperledger Fabric v2.5 (Channel: pdschannel)</div>
+            <div><strong>Smart Contract:</strong></div><div>smartpds (Contract API v2.5)</div>
+            <div><strong>Biometric POS Encryption:</strong></div><div>AES-256 + SHA-256 One-Way Hash</div>
+            <div><strong>ESP32 Device Token:</strong></div><div><code>DEV-OFF001-ESP32-SECURE</code></div>
+            <div><strong>API Environment:</strong></div><div>Development / Production Ready</div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- MODALS -->
+
+  <!-- Customer Approval Modal -->
+  <div class="modal-overlay" id="modal-customer-review">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 id="rev-customer-title">Beneficiary Application Review</h3>
+        <button class="modal-close-btn" onclick="closeModal('modal-customer-review')">&times;</button>
+      </div>
+      <div id="rev-customer-content" style="font-size: 0.9rem; margin-bottom: 20px;"></div>
+      <div class="form-group" style="margin-bottom: 20px;">
+        <label class="form-label">Rejection Reason (If rejecting):</label>
+        <input type="text" id="rev-reject-reason" class="form-control" placeholder="e.g. Identity documents unverified">
+      </div>
+      <div style="display: flex; justify-content: flex-end; gap: 12px;">
+        <button class="btn btn-outline" style="color: var(--red-primary);" onclick="confirmCustomerRejection()">Reject Application</button>
+        <button class="btn btn-success" onclick="confirmCustomerApproval()">Approve for Ration Distribution ✓</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Create Office Modal -->
+  <div class="modal-overlay" id="modal-create-office">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3>Create New Fair Price Ration Office</h3>
+        <button class="modal-close-btn" onclick="closeModal('modal-create-office')">&times;</button>
+      </div>
+      <form id="form-create-office" onsubmit="handleCreateOffice(event)">
+        <div class="form-grid">
+          <div class="form-group form-group-full">
+            <label class="form-label">Office Name <span class="req">*</span></label>
+            <input type="text" id="off-name" class="form-control" placeholder="e.g. Tambaram Fair Price Shop #04" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">State <span class="req">*</span></label>
+            <input type="text" id="off-state" class="form-control" value="Tamil Nadu" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">District <span class="req">*</span></label>
+            <input type="text" id="off-district" class="form-control" value="Chennai" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Taluk</label>
+            <input type="text" id="off-taluk" class="form-control" value="Tambaram">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Village / Ward</label>
+            <input type="text" id="off-village" class="form-control" value="East Tambaram">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Pincode <span class="req">*</span></label>
+            <input type="text" id="off-pincode" class="form-control" value="600059" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Contact Number</label>
+            <input type="text" id="off-contact" class="form-control" value="044-22391002">
+          </div>
+          <div class="form-group form-group-full">
+            <label class="form-label">Office Address</label>
+            <input type="text" id="off-address" class="form-control" value="12, Station Road, East Tambaram">
+          </div>
+          <div class="form-group form-group-full">
+            <label class="form-label">Assign Officer (Optional)</label>
+            <select id="off-officerId" class="form-control">
+              <option value="">-- Leave Unassigned for now --</option>
+            </select>
+          </div>
+        </div>
+        <div style="margin-top: 24px; display: flex; justify-content: flex-end; gap: 12px;">
+          <button type="button" class="btn btn-outline" onclick="closeModal('modal-create-office')">Cancel</button>
+          <button type="submit" class="btn btn-primary">Create Office</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Create Officer Modal -->
+  <div class="modal-overlay" id="modal-create-officer">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3>Create Ration Shop Officer Account</h3>
+        <button class="modal-close-btn" onclick="closeModal('modal-create-officer')">&times;</button>
+      </div>
+      <form id="form-create-officer" onsubmit="handleCreateOfficer(event)">
+        <div class="form-grid">
+          <div class="form-group">
+            <label class="form-label">Officer Full Name <span class="req">*</span></label>
+            <input type="text" id="ofr-name" class="form-control" placeholder="e.g. K. Vasanth" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Username <span class="req">*</span></label>
+            <input type="text" id="ofr-username" class="form-control" placeholder="e.g. vasanth003" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Password <span class="req">*</span></label>
+            <input type="password" id="ofr-password" class="form-control" value="Password123!" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Mobile Number</label>
+            <input type="tel" id="ofr-mobile" class="form-control" placeholder="9840192831">
+          </div>
+          <div class="form-group form-group-full">
+            <label class="form-label">Assigned Fair Price Office <span class="req">*</span></label>
+            <select id="ofr-officeId" class="form-control" required>
+              <!-- Populated dynamically -->
+            </select>
+          </div>
+        </div>
+        <div style="margin-top: 24px; display: flex; justify-content: flex-end; gap: 12px;">
+          <button type="button" class="btn btn-outline" onclick="closeModal('modal-create-officer')">Cancel</button>
+          <button type="submit" class="btn btn-primary">Create Officer</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Add Stock Batch Modal -->
+  <div class="modal-overlay" id="modal-add-stock">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3>Ingest Grain Stock & Commit to Blockchain</h3>
+        <button class="modal-close-btn" onclick="closeModal('modal-add-stock')">&times;</button>
+      </div>
+      <form id="form-add-stock" onsubmit="handleAddStock(event)">
+        <div class="form-grid">
+          <div class="form-group">
+            <label class="form-label">Commodity <span class="req">*</span></label>
+            <select id="stk-commodity" class="form-control" required>
+              <option value="Rice">Rice (Grade A)</option>
+              <option value="Wheat">Wheat (Whole Grain)</option>
+              <option value="Sugar">Refined Sugar</option>
+              <option value="Dal">Toor Dal</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Quantity (KG) <span class="req">*</span></label>
+            <input type="number" id="stk-quantity" class="form-control" placeholder="e.g. 25000" min="1" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Target Warehouse Silo <span class="req">*</span></label>
+            <select id="stk-warehouse" class="form-control" required>
+              <option value="WH-C01">WH-C01 (Central FCI Silo Chennai)</option>
+              <option value="WH-S01">WH-S01 (State Buffer Godown Madurai)</option>
+              <option value="WH-D01">WH-D01 (District Warehouse Coimbatore)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Procurement Date <span class="req">*</span></label>
+            <input type="date" id="stk-date" class="form-control" required>
+          </div>
+          <div class="form-group form-group-full">
+            <label class="form-label">Supplier / Mandi Board Source <span class="req">*</span></label>
+            <input type="text" id="stk-supplier" class="form-control" placeholder="e.g. National Agricultural Cooperative Marketing Federation" required>
+          </div>
+        </div>
+        <div style="margin-top: 24px; display: flex; justify-content: flex-end; gap: 12px;">
+          <button type="button" class="btn btn-outline" onclick="closeModal('modal-add-stock')">Cancel</button>
+          <button type="submit" class="btn btn-primary">Ingest Batch & Commit on Ledger</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Create Dispatch Modal -->
+  <div class="modal-overlay" id="modal-create-dispatch">
+    <div class="modal-dialog" style="max-width: 720px;">
+      <div class="modal-header">
+        <h3>Create Multi-Commodity Office Dispatch</h3>
+        <button class="modal-close-btn" onclick="closeModal('modal-create-dispatch')">&times;</button>
+      </div>
+      <form id="form-create-dispatch" onsubmit="handleCreateDispatch(event)">
+        <div class="form-grid">
+          <div class="form-group">
+            <label class="form-label">Source Warehouse <span class="req">*</span></label>
+            <select id="dsp-source" class="form-control" required onchange="populateDispatchBatchOptions()">
+              <option value="WH-C01" selected>WH-C01 (FCI Chennai)</option>
+              <option value="WH-S01">WH-S01 (Madurai State Godown)</option>
+              <option value="WH-D01">WH-D01 (Coimbatore District)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Destination Fair Price Shop <span class="req">*</span></label>
+            <select id="dsp-dest" class="form-control" required>
+              <!-- Populated dynamically -->
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Vehicle Registration No <span class="req">*</span></label>
+            <input type="text" id="dsp-vehicle" class="form-control" placeholder="e.g. TN-01-AG-4421" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Driver Details <span class="req">*</span></label>
+            <input type="text" id="dsp-driver" class="form-control" placeholder="e.g. M. Shanmugam (Mob: 9444102911)" required>
+          </div>
+        </div>
+
+        <div style="margin: 20px 0 12px 0; display: flex; justify-content: space-between; align-items: center;">
+          <h4 style="font-size: 0.95rem; color: var(--navy-primary);">Dispatch Items (+ Add Multi-Commodity)</h4>
+          <button type="button" class="btn btn-outline btn-sm" onclick="addDispatchItemRow()">+ Add Item</button>
+        </div>
+
+        <div id="dispatch-items-container">
+          <!-- Dynamically populated rows -->
+        </div>
+
+        <div style="margin-top: 24px; display: flex; justify-content: flex-end; gap: 12px;">
+          <button type="button" class="btn btn-outline" onclick="closeModal('modal-create-dispatch')">Cancel</button>
+          <button type="submit" class="btn btn-primary">Dispatch Shipment & Commit to Blockchain</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="js/api.js"></script>
+  <script src="js/admin-dashboard.js"></script>
+</body>
+</html>
+

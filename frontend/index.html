@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smart Indian Public Distribution System (PDS) | National Portal</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- National Top Strip -->
+  <div class="gov-top-strip">
+    <div>
+      <span>🇮🇳 Government of India | Department of Food & Public Distribution | Ministry of Consumer Affairs</span>
+    </div>
+    <div>
+      <span>National Toll-Free PDS Helpline: <strong>1967 / 1800-180-2087</strong></span>
+      <a href="blockchain-explorer.html">Public Ledger</a>
+      <a href="#track-section">Track Application</a>
+    </div>
+  </div>
+
+  <!-- Main Navigation Bar -->
+  <nav class="navbar">
+    <a href="index.html" class="brand-wrapper">
+      <div class="emblem-icon">🏛️</div>
+      <div class="brand-text">
+        <h1>SMART PDS INDIA</h1>
+        <p>NATIONAL PUBLIC DISTRIBUTION SYSTEM & BLOCKCHAIN REPOSITORY</p>
+      </div>
+    </a>
+    <ul class="nav-links">
+      <li><a href="index.html" class="nav-link active">Home</a></li>
+      <li><a href="customer-registration.html" class="nav-link">New Registration</a></li>
+      <li><a href="customer-dashboard.html" class="nav-link">Beneficiary Portal</a></li>
+      <li><a href="blockchain-explorer.html" class="nav-link">Blockchain Explorer</a></li>
+      <li><a href="officer-login.html" class="btn btn-outline btn-sm">Officer Sign-In</a></li>
+      <li><a href="admin-login.html" class="btn btn-primary btn-sm">Admin Portal</a></li>
+    </ul>
+  </nav>
+
+  <!-- Hero Section -->
+  <section class="hero-section">
+    <div class="hero-pill">
+      <span>🛡️ Powered by Hyperledger Fabric & Biometric IoT Authentication</span>
+    </div>
+    <h1 class="hero-title">Transparent, Secure & Tamper-Proof Food Grain Distribution for Every Citizen</h1>
+    <p class="hero-subtitle">
+      Integrating Firebase Cloud Architecture, Real-Time Hardware Biometric Sensors, and Enterprise Blockchain Ledger tracking from Mandi Procurement to Fair Price Shops.
+    </p>
+  </section>
+
+  <!-- THREE MAJOR PORTAL OPTIONS -->
+  <section class="portal-options-container">
+    <div class="portal-grid">
+
+      <!-- OPTION 1: CUSTOMER ACCOUNT CREATION -->
+      <div class="portal-card card-customer">
+        <div>
+          <div class="portal-icon">📝</div>
+          <span class="badge badge-success" style="margin-bottom: 12px;">Option 01</span>
+          <h3>Customer Account Creation</h3>
+          <p>
+            New beneficiaries can enroll their ration card, register family members, link biometrics, upload proof documents, and track approval status.
+          </p>
+        </div>
+        <div>
+          <a href="customer-registration.html" class="btn btn-success btn-block btn-lg">
+            Register New Ration Card →
+          </a>
+          <div style="margin-top: 14px;">
+            <a href="customer-dashboard.html" style="font-size: 0.85rem; color: var(--green-primary); font-weight: 600; text-decoration: none;">
+              Already registered? Check Entitlement Quota →
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- OPTION 2: ADMIN LOGIN -->
+      <div class="portal-card card-admin">
+        <div>
+          <div class="portal-icon">⚙️</div>
+          <span class="badge badge-navy" style="margin-bottom: 12px;">Option 02</span>
+          <h3>Admin Central Command</h3>
+          <p>
+            State and Central directors can manage warehouses, add commodity stock, dispatch grain shipments, configure Fair Price Shops, and monitor blockchain integrity.
+          </p>
+        </div>
+        <div>
+          <a href="admin-login.html" class="btn btn-primary btn-block btn-lg">
+            Admin Portal Login →
+          </a>
+          <div style="margin-top: 14px;">
+            <span style="font-size: 0.82rem; color: var(--text-muted);">
+              Demo: <code>admin</code> / <code>AdminPassword123!</code>
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- OPTION 3: OFFICER LOGIN -->
+      <div class="portal-card card-officer">
+        <div>
+          <div class="portal-icon">🏪</div>
+          <span class="badge badge-info" style="margin-bottom: 12px;">Option 03</span>
+          <h3>Ration Shop Officer Login</h3>
+          <p>
+            Authorized Fair Price Shop (FPS) dealers can acknowledge incoming truck dispatches, verify citizen biometrics via ESP32, and conduct quota distribution.
+          </p>
+        </div>
+        <div>
+          <a href="officer-login.html" class="btn btn-primary btn-block btn-lg" style="background-color: var(--blue-primary);">
+            Officer Terminal Sign-In →
+          </a>
+          <div style="margin-top: 14px;">
+            <span style="font-size: 0.82rem; color: var(--text-muted);">
+              Demo: <code>raj001</code> / <code>Password123!</code>
+            </span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- Live Statistics Strip -->
+  <section class="stats-banner">
+    <div class="stats-grid">
+      <div class="stat-item">
+        <h4 id="stat-beneficiaries">14,280+</h4>
+        <p>Active Beneficiaries</p>
+      </div>
+      <div class="stat-item">
+        <h4 id="stat-shops">4,850</h4>
+        <p>Fair Price Shops</p>
+      </div>
+      <div class="stat-item">
+        <h4 id="stat-stock">56,800 KG</h4>
+        <p>Tracked Grain Stock</p>
+      </div>
+      <div class="stat-item">
+        <h4 id="stat-blocks">100%</h4>
+        <p>Blockchain Audit Provenance</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Quick Application Tracking Section -->
+  <section id="track-section" style="max-width: 800px; margin: 0 auto 60px auto; padding: 0 24px;">
+    <div class="card" style="border-top: 4px solid var(--navy-primary);">
+      <div style="text-align: center; margin-bottom: 20px;">
+        <h2 style="font-size: 1.4rem; color: var(--navy-primary); font-weight: 700;">Check Your Ration Card Application Status</h2>
+        <p style="font-size: 0.88rem; color: var(--text-muted);">
+          Enter your Application Customer ID (e.g. <code>CUST-TN-2025-001</code>) or Ration Card Number (e.g. <code>RC-TN-772819</code>)
+        </p>
+      </div>
+      <form id="track-form" style="display: flex; gap: 12px;">
+        <input type="text" id="track-input" class="form-control" placeholder="Enter Customer ID or Ration Card Number" required>
+        <button type="submit" class="btn btn-success" style="white-space: nowrap;">Check Status</button>
+      </form>
+
+      <!-- Status Result Box -->
+      <div id="track-result" style="display: none; margin-top: 24px; padding: 20px; background-color: #F8FAFC; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+      </div>
+    </div>
+  </section>
+
+  <!-- Technical Innovations Showcase -->
+  <section class="features-container">
+    <div class="section-header">
+      <h2>National PDS Architecture Pillars</h2>
+      <p>Zero leakage, eliminate phantom beneficiaries, and enforce precision weighing.</p>
+    </div>
+
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="feat-icon">🔒</div>
+        <h4>Hyperledger Fabric Ledger</h4>
+        <p>Every grain batch, from farmer procurement to warehouse transit and final beneficiary distribution, is immutably committed on-chain with cryptographic SHA-256 state proofs.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feat-icon">👆</div>
+        <h4>ESP32 IoT Biometric POS</h4>
+        <p>Local fingerprint matching via optical sensor and 4x4 matrix keypad prevents biometric image leaks while guaranteeing that only authorized family members collect rations.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feat-icon">⚖️</div>
+        <h4>Family Entitlement Rules</h4>
+        <p>Automated calculation according to NFSA rules: Priority Households (PHH) receive per-person quotas, while Antyodaya Anna Yojana (AAY) households receive fixed allocations.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Government Footer -->
+  <footer class="gov-footer">
+    <div class="footer-grid">
+      <div>
+        <h3 style="color: white; font-size: 1.15rem; margin-bottom: 12px;">Smart Indian Public Distribution System (PDS)</h3>
+        <p style="font-size: 0.88rem; line-height: 1.6; color: #8F9CAE;">
+          National e-Governance Division project designed to revolutionize the Targeted Public Distribution System (TPDS). Built with Node.js, Firebase Firestore, Hyperledger Fabric Blockchain, and ESP32 IoT biometric POS terminals.
+        </p>
+      </div>
+      <div>
+        <h4 style="color: white; font-size: 0.95rem; margin-bottom: 12px;">Quick Links</h4>
+        <ul style="list-style: none; font-size: 0.85rem; line-height: 2;">
+          <li><a href="customer-registration.html" style="color: #B3C2D4; text-decoration: none;">Customer Registration</a></li>
+          <li><a href="officer-login.html" style="color: #B3C2D4; text-decoration: none;">FPS Officer Login</a></li>
+          <li><a href="admin-login.html" style="color: #B3C2D4; text-decoration: none;">State Admin Portal</a></li>
+          <li><a href="blockchain-explorer.html" style="color: #B3C2D4; text-decoration: none;">Blockchain Explorer</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4 style="color: white; font-size: 0.95rem; margin-bottom: 12px;">PDS Support & Emergency</h4>
+        <p style="font-size: 0.85rem; color: #8F9CAE; margin-bottom: 8px;">Toll Free Citizen Grievance:</p>
+        <p style="font-size: 1.1rem; color: #36B37E; font-weight: 700; margin-bottom: 12px;">1800-425-9393</p>
+        <p style="font-size: 0.82rem; color: #8F9CAE;">Working Hours: Mon-Sat 08:00 AM - 08:00 PM</p>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>© 2026 National Smart PDS Portal. Built for the Government of India. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <script src="js/api.js"></script>
+  <script>
+    // Fetch live dashboard analytics for counters
+    async function loadStats() {
+      try {
+        const data = await apiRequest('/reports/dashboard-analytics');
+        if (data && data.metrics) {
+          document.getElementById('stat-beneficiaries').textContent = data.metrics.totalRegisteredCustomers.toLocaleString() + '+';
+          document.getElementById('stat-shops').textContent = data.metrics.totalOffices.toLocaleString();
+          document.getElementById('stat-stock').textContent = (data.metrics.totalAvailableStockKg || 0).toLocaleString() + ' KG';
+          document.getElementById('stat-blocks').textContent = (data.metrics.totalBlockchainTransactions || 0).toLocaleString() + ' TXs';
+        }
+      } catch (e) {
+        console.warn('Using baseline statistics banner.');
+      }
+    }
+    loadStats();
+
+    // Application Tracking Form
+    const trackForm = document.getElementById('track-form');
+    const trackInput = document.getElementById('track-input');
+    const trackResult = document.getElementById('track-result');
+
+    trackForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const val = trackInput.value.trim();
+      if (!val) return;
+
+      trackResult.style.display = 'block';
+      trackResult.innerHTML = '<p style="text-align:center;">🔍 Searching national registry database...</p>';
+
+      try {
+        const res = await apiRequest(`/customers/track/${encodeURIComponent(val)}`);
+        const statusBadge = res.status === 'APPROVED'
+          ? '<span class="badge badge-success">APPROVED</span>'
+          : res.status === 'PENDING'
+          ? '<span class="badge badge-warning">PENDING VERIFICATION</span>'
+          : '<span class="badge badge-danger">REJECTED</span>';
+
+        trackResult.innerHTML = `
+          <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #ddd; padding-bottom:12px; margin-bottom:12px;">
+            <div>
+              <h4 style="font-size:1.1rem; color:var(--navy-primary);">${res.fullName}</h4>
+              <p style="font-size:0.82rem; color:var(--text-muted);">Customer ID: <strong>${res.customerId}</strong> | Ration Card: <strong>${res.rationCardNumber}</strong></p>
+            </div>
+            <div>${statusBadge}</div>
+          </div>
+          <div style="font-size:0.88rem; display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+            <p><strong>Card Category:</strong> ${res.category}</p>
+            <p><strong>Assigned Fair Price Shop:</strong> ${res.assignedOfficeName || 'Chennai FPS #01'}</p>
+            <p><strong>Application Date:</strong> ${res.createdAt ? new Date(res.createdAt).toLocaleDateString() : 'N/A'}</p>
+            <p><strong>Ration Entitlement:</strong> ${res.status === 'APPROVED' ? '<span style="color:var(--green-primary); font-weight:600;">ACTIVE (Ready for pickup)</span>' : 'Awaiting admin approval'}</p>
+          </div>
+          ${res.rejectionReason ? `<div style="margin-top:12px; padding:10px; background:#FFEBE6; color:#BF2600; border-radius:4px; font-size:0.85rem;"><strong>Rejection Note:</strong> ${res.rejectionReason}</div>` : ''}
+          ${res.status === 'APPROVED' ? `<div style="margin-top:14px; text-align:right;"><a href="customer-dashboard.html" class="btn btn-sm btn-success">Open Beneficiary Portal →</a></div>` : ''}
+        `;
+      } catch (err) {
+        trackResult.innerHTML = `
+          <div style="color:var(--red-primary); text-align:center;">
+            <p>❌ No application record found matching <strong>${val}</strong>.</p>
+            <p style="font-size:0.82rem; color:var(--text-muted); margin-top:4px;">Please double-check your Customer ID or Ration Card Number, or submit a new registration.</p>
+          </div>
+        `;
+      }
+    });
+  </script>
+</body>
+</html>
+

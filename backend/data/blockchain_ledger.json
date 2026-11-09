@@ -1,0 +1,380 @@
+{
+  "chain": [
+    {
+      "blockNumber": 0,
+      "timestamp": "2026-11-09T03:57:58.977Z",
+      "previousHash": "0x0000000000000000000000000000000000000000000000000000000000000000",
+      "transactions": [
+        {
+          "txId": "0xGENESIS00000000000000000000000000000000000000000000000000000000",
+          "action": "GENESIS_INIT",
+          "payload": {
+            "network": "Indian Public Distribution System (PDS) Hyperledger Fabric Channel",
+            "authority": "Ministry of Consumer Affairs, Food & Public Distribution",
+            "timestamp": "2026-11-09T03:57:58.976Z",
+            "version": "1.0.0-PROD"
+          },
+          "status": "COMMITTED_LEDGER",
+          "timestamp": "2026-11-09T03:57:58.977Z"
+        }
+      ],
+      "merkleRoot": "0xe81105f9d5a5ecbabbb0863008be0ca20ec24071405ceb8a89b08b70ea8a8a1e",
+      "nonce": 100,
+      "hash": "0x0b54c00f6afed538eda1d9cdfb65351640b68f62f8642eed828c0d4998719a71"
+    },
+    {
+      "blockNumber": 1,
+      "timestamp": "2026-11-09T03:57:59.110Z",
+      "previousHash": "0x0b54c00f6afed538eda1d9cdfb65351640b68f62f8642eed828c0d4998719a71",
+      "transactions": [
+        {
+          "txId": "0xc09fdc6676c285db6318cf82c809efdbd859125dbffecaa48388a835ffb91954",
+          "action": "registerProcurement",
+          "payload": {
+            "procurementId": "PROC-BATCH-RICE-2025-01",
+            "batchId": "BATCH-RICE-2025-01",
+            "commodity": "Rice",
+            "quantity": 50000,
+            "unit": "KG",
+            "mandiSource": "Punjab Agro Mandi Board & FCI Procurements",
+            "warehouseId": "WH-C01"
+          },
+          "channel": "pdschannel",
+          "chaincode": "smartpds",
+          "status": "PENDING_BLOCKCHAIN",
+          "timestamp": "2026-11-09T03:57:59.110Z",
+          "submittedBy": "SYSTEM_NODE"
+        }
+      ],
+      "merkleRoot": "0xb9f3749d9f46139742889b4ae2dc0d041ab1e9af45d68489a2708eb88501872c",
+      "nonce": 98988,
+      "hash": "0x8e6e9f892e09578032b2821fb41fc9dd4e849e83564ae7de06c85a357fdf0daf"
+    },
+    {
+      "blockNumber": 2,
+      "timestamp": "2026-11-09T03:57:59.111Z",
+      "previousHash": "0x8e6e9f892e09578032b2821fb41fc9dd4e849e83564ae7de06c85a357fdf0daf",
+      "transactions": [
+        {
+          "txId": "0x9249632dfb331fc51f3dd7e4cf61d3df320354f11f50067604dd1fbb9d7adc29",
+          "action": "registerProcurement",
+          "payload": {
+            "procurementId": "PROC-BATCH-WHEAT-2025-01",
+            "batchId": "BATCH-WHEAT-2025-01",
+            "commodity": "Wheat",
+            "quantity": 30000,
+            "unit": "KG",
+            "mandiSource": "Madhya Pradesh State Civil Supplies",
+            "warehouseId": "WH-C01"
+          },
+          "channel": "pdschannel",
+          "chaincode": "smartpds",
+          "status": "PENDING_BLOCKCHAIN",
+          "timestamp": "2026-11-09T03:57:59.111Z",
+          "submittedBy": "SYSTEM_NODE"
+        }
+      ],
+      "merkleRoot": "0xb62f16027f49d95efc4b9be023f736139328688c277973bfcb983ae832bef6a8",
+      "nonce": 41461,
+      "hash": "0xb10be9c0337483670b6ebe4e11736e090f0deddbf7a7c29fd96d8afe23d46718"
+    },
+    {
+      "blockNumber": 3,
+      "timestamp": "2026-11-09T03:57:59.113Z",
+      "previousHash": "0xb10be9c0337483670b6ebe4e11736e090f0deddbf7a7c29fd96d8afe23d46718",
+      "transactions": [
+        {
+          "txId": "0x9747147a60cdf93608bb045657bbd6d60c4122520ad9a32752cd901beb3e2a77",
+          "action": "registerProcurement",
+          "payload": {
+            "procurementId": "PROC-BATCH-SUGAR-2025-01",
+            "batchId": "BATCH-SUGAR-2025-01",
+            "commodity": "Sugar",
+            "quantity": 10000,
+            "unit": "KG",
+            "mandiSource": "National Federation of Cooperative Sugar Factories",
+            "warehouseId": "WH-C01"
+          },
+          "channel": "pdschannel",
+          "chaincode": "smartpds",
+          "status": "PENDING_BLOCKCHAIN",
+          "timestamp": "2026-11-09T03:57:59.113Z",
+          "submittedBy": "SYSTEM_NODE"
+        }
+      ],
+      "merkleRoot": "0x5b6ccbc15e05a8cf217de09f8275e42867a22445236f3062572793121e49f4d2",
+      "nonce": 7128,
+      "hash": "0x0a1d893944f506b272ea4fe62e017af731414f0c821c5d80186f8086d7468d0b"
+    },
+    {
+      "blockNumber": 4,
+      "timestamp": "2026-11-09T03:57:59.114Z",
+      "previousHash": "0x0a1d893944f506b272ea4fe62e017af731414f0c821c5d80186f8086d7468d0b",
+      "transactions": [
+        {
+          "txId": "0x1556ea6614877d581386437a10c15b819582d7128055d2797f14b7cc49ae0e18",
+          "action": "registerProcurement",
+          "payload": {
+            "procurementId": "PROC-BATCH-DAL-2025-01",
+            "batchId": "BATCH-DAL-2025-01",
+            "commodity": "Dal",
+            "quantity": 8000,
+            "unit": "KG",
+            "mandiSource": "NAFED Pulse Procurement Drive",
+            "warehouseId": "WH-C01"
+          },
+          "channel": "pdschannel",
+          "chaincode": "smartpds",
+          "status": "PENDING_BLOCKCHAIN",
+          "timestamp": "2026-11-09T03:57:59.114Z",
+          "submittedBy": "SYSTEM_NODE"
+        }
+      ],
+      "merkleRoot": "0x3b69190f7c9c2ed382c6d77fe309f553d600e586ecfd9a568cc13a76749bb3d3",
+      "nonce": 79339,
+      "hash": "0x60b098cb8a3e027ef23108419a8067a4f204ad1061fb65d8a741f46f4256faae"
+    },
+    {
+      "blockNumber": 5,
+      "timestamp": "2026-11-09T03:57:59.116Z",
+      "previousHash": "0x60b098cb8a3e027ef23108419a8067a4f204ad1061fb65d8a741f46f4256faae",
+      "transactions": [
+        {
+          "txId": "0x4b360bb04ad112b5b6eb3ce00dc0e9a04821f23e2533a262e6fad9444477f84d",
+          "action": "dispatchToOffice",
+          "payload": {
+            "dispatchId": "DSP-2025-001",
+            "sourceWarehouseId": "WH-C01",
+            "destOfficeId": "OFF001",
+            "items": [
+              {
+                "commodity": "Rice",
+                "batchId": "BATCH-RICE-2025-01",
+                "quantity": 2000,
+                "unit": "KG"
+              },
+              {
+                "commodity": "Wheat",
+                "batchId": "BATCH-WHEAT-2025-01",
+                "quantity": 1000,
+                "unit": "KG"
+              },
+              {
+                "commodity": "Sugar",
+                "batchId": "BATCH-SUGAR-2025-01",
+                "quantity": 500,
+                "unit": "KG"
+              }
+            ],
+            "vehicleNo": "TN-01-AG-4421",
+            "driverDetails": "M. Shanmugam (DL: TN0120110049219, Mob: 9444102911)"
+          },
+          "channel": "pdschannel",
+          "chaincode": "smartpds",
+          "status": "PENDING_BLOCKCHAIN",
+          "timestamp": "2026-11-09T03:57:59.116Z",
+          "submittedBy": "SYSTEM_NODE"
+        }
+      ],
+      "merkleRoot": "0x509f50b9895cf1e056583539072bb5f5be6674b96447171d7d0649eeb22cec53",
+      "nonce": 82940,
+      "hash": "0x2b8354daf59494674cf3c4b412784f0cff6203091ba77e1ffd310e37c30ae5fb"
+    },
+    {
+      "blockNumber": 6,
+      "timestamp": "2026-11-09T03:57:59.117Z",
+      "previousHash": "0x2b8354daf59494674cf3c4b412784f0cff6203091ba77e1ffd310e37c30ae5fb",
+      "transactions": [
+        {
+          "txId": "0x37d300e7c802548f548373bd96392aaadd3049bd7b94b8d8caebb67b07b63148",
+          "action": "confirmOfficeReceipt",
+          "payload": {
+            "dispatchId": "DSP-2025-001",
+            "officeId": "OFF001",
+            "receivedItems": [
+              {
+                "commodity": "Rice",
+                "batchId": "BATCH-RICE-2025-01",
+                "quantity": 2000,
+                "unit": "KG"
+              },
+              {
+                "commodity": "Wheat",
+                "batchId": "BATCH-WHEAT-2025-01",
+                "quantity": 1000,
+                "unit": "KG"
+              },
+              {
+                "commodity": "Sugar",
+                "batchId": "BATCH-SUGAR-2025-01",
+                "quantity": 500,
+                "unit": "KG"
+              }
+            ],
+            "officerId": "OFFICER001",
+            "discrepancy": false,
+            "difference": [],
+            "remarks": "All items verified against physical weigh-bridge."
+          },
+          "channel": "pdschannel",
+          "chaincode": "smartpds",
+          "status": "PENDING_BLOCKCHAIN",
+          "timestamp": "2026-11-09T03:57:59.117Z",
+          "submittedBy": "OFFICER001"
+        }
+      ],
+      "merkleRoot": "0x306bf853a8f6c2d1d8faf0d36fe730ea47ac8cb6d3b1cfc0028c52206d5744c2",
+      "nonce": 53731,
+      "hash": "0x6666f106375537228d0edd52332ad63ff01aea22a5b8028b522fd6c0f64914d1"
+    },
+    {
+      "blockNumber": 7,
+      "timestamp": "2026-11-09T03:57:59.118Z",
+      "previousHash": "0x6666f106375537228d0edd52332ad63ff01aea22a5b8028b522fd6c0f64914d1",
+      "transactions": [
+        {
+          "txId": "0x5022ad86182ec8658f613d1d301ea40c1a22fcc38ea63f5698130f7a826fea64",
+          "action": "dispatchToOffice",
+          "payload": {
+            "dispatchId": "DSP-2025-002",
+            "sourceWarehouseId": "WH-C01",
+            "destOfficeId": "OFF001",
+            "items": [
+              {
+                "commodity": "Rice",
+                "batchId": "BATCH-RICE-2025-01",
+                "quantity": 1000,
+                "unit": "KG"
+              },
+              {
+                "commodity": "Dal",
+                "batchId": "BATCH-DAL-2025-01",
+                "quantity": 300,
+                "unit": "KG"
+              }
+            ],
+            "vehicleNo": "TN-22-CX-7788",
+            "driverDetails": "K. Parthiban (Mob: 9884019283)"
+          },
+          "channel": "pdschannel",
+          "chaincode": "smartpds",
+          "status": "PENDING_BLOCKCHAIN",
+          "timestamp": "2026-11-09T03:57:59.118Z",
+          "submittedBy": "SYSTEM_NODE"
+        }
+      ],
+      "merkleRoot": "0x883fb39fb69e7ec1ce2a1b6f9eaea00ea6bafc1cbc50e3e288260cb5672efee0",
+      "nonce": 7772,
+      "hash": "0xcc7aa0ef80b36605e7d0240088a90dcd6c686292f7e5c0a966990296ba5a3a28"
+    },
+    {
+      "blockNumber": 8,
+      "timestamp": "2026-11-09T03:57:59.123Z",
+      "previousHash": "0xcc7aa0ef80b36605e7d0240088a90dcd6c686292f7e5c0a966990296ba5a3a28",
+      "transactions": [
+        {
+          "txId": "0x0194b0597655ea0ab1849329a065568237aaf51689163d5acd5e24ce6df2928a",
+          "action": "distributeRation",
+          "payload": {
+            "distributionId": "DIST-2025-001",
+            "customerId": "CUST-TN-2025-001",
+            "rationCardNumber": "RC-TN-772819",
+            "officeId": "OFF001",
+            "officerId": "OFFICER001",
+            "distributedItems": [
+              {
+                "commodity": "Rice",
+                "quantity": 10,
+                "unit": "KG",
+                "price": 0
+              },
+              {
+                "commodity": "Wheat",
+                "quantity": 4,
+                "unit": "KG",
+                "price": 0
+              },
+              {
+                "commodity": "Sugar",
+                "quantity": 1,
+                "unit": "KG",
+                "price": 13.5
+              }
+            ],
+            "biometricVerificationRef": "BIO-AUTH-SEED-VERIFIED-01",
+            "receiptNumber": "RCP-2025-001"
+          },
+          "channel": "pdschannel",
+          "chaincode": "smartpds",
+          "status": "PENDING_BLOCKCHAIN",
+          "timestamp": "2026-11-09T03:57:59.123Z",
+          "submittedBy": "OFFICER001"
+        }
+      ],
+      "merkleRoot": "0x203cc5c3e53cfadaafa348809d77b4fb7d8e6c5d31eddbfa5bd873c1aa8dbd0c",
+      "nonce": 30809,
+      "hash": "0xc589826870276ed5d11cae755ddae406802697ba157532deb88aae4d6e23b37f"
+    },
+    {
+      "blockNumber": 9,
+      "timestamp": "2026-11-09T04:15:07.513Z",
+      "previousHash": "0xc589826870276ed5d11cae755ddae406802697ba157532deb88aae4d6e23b37f",
+      "transactions": [
+        {
+          "txId": "0xf3b2e3e7f6dd6fc9e9836c6d7eedcf4104afdb3ae7b15c568aee4e0895046f73",
+          "action": "registerBatch",
+          "payload": {
+            "batchId": "BATCH-TEST-2025-99",
+            "commodityId": "COMM-RICE",
+            "commodityName": "Rice",
+            "quantity": 1000,
+            "unit": "KG",
+            "procurementDate": "2025-11-09",
+            "warehouseId": "WH-C01",
+            "supplier": "Test Farmer Mandi",
+            "expiryDate": "N/A"
+          },
+          "channel": "pdschannel",
+          "chaincode": "smartpds",
+          "status": "PENDING_BLOCKCHAIN",
+          "timestamp": "2026-11-09T04:15:07.513Z",
+          "submittedBy": "SYSTEM_NODE"
+        }
+      ],
+      "merkleRoot": "0x5ecb44b28606816a897413a4f7f354a8f7f9b3adb5bae5d3b734c69f01875304",
+      "nonce": 74937,
+      "hash": "0xf79e17f6ab422e7a951c2529529653710b4d77a32b9bdc55ec9655eba6727c8c"
+    },
+    {
+      "blockNumber": 10,
+      "timestamp": "2026-11-09T04:22:16.733Z",
+      "previousHash": "0xf79e17f6ab422e7a951c2529529653710b4d77a32b9bdc55ec9655eba6727c8c",
+      "transactions": [
+        {
+          "txId": "0x42cca50f982d621189d6ae63d635a9d52d235d4ab0be839ce0f6a277d81068df",
+          "action": "registerBatch",
+          "payload": {
+            "batchId": "BATCH-TEST-2025-99",
+            "commodityId": "COMM-RICE",
+            "commodityName": "Rice",
+            "quantity": 1000,
+            "unit": "KG",
+            "procurementDate": "2025-11-09",
+            "warehouseId": "WH-C01",
+            "supplier": "Test Farmer Mandi",
+            "expiryDate": "N/A"
+          },
+          "channel": "pdschannel",
+          "chaincode": "smartpds",
+          "status": "PENDING_BLOCKCHAIN",
+          "timestamp": "2026-11-09T04:22:16.733Z",
+          "submittedBy": "SYSTEM_NODE"
+        }
+      ],
+      "merkleRoot": "0x1c90b077631827fbcd722d7705b76254756d20e2532c10ac6243adeae261dea4",
+      "nonce": 76574,
+      "hash": "0x48e8eaf08e59aaa40de2bf89f8ec3361e8f4ed7da308e550342b709bd383ef1d"
+    }
+  ],
+  "lastUpdated": "2026-11-09T04:22:16.733Z"
+}

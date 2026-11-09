@@ -1,0 +1,14 @@
+{
+  "name": "smartpds-chaincode",
+  "version": "1.0.0",
+  "description": "Smart Indian Public Distribution System Hyperledger Fabric Chaincode",
+  "main": "smartpds.js",
+  "scripts": {
+    "start": "fabric-chaincode-node start"
+  },
+  "dependencies": {
+    "fabric-contract-api": "^2.5.4",
+    "fabric-shim": "^2.5.4"
+  }
+}
+

@@ -1,0 +1,39 @@
+rules_version = '2';
+// ==============================================================================
+// Firebase Cloud Storage Security Rules
+// Project: ration-system-877e4
+// Bucket: ration-system-877e4.firebasestorage.app
+// ==============================================================================
+
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    // Beneficiary supporting verification documents (Ration Card, Address, ID Proof)
+    match /documents/{customerId}/{documentName} {
+      // Allow citizen to upload during registration:
+      // Must be under 5MB and must be PDF or image
+      allow write: if request.resource.size < 5 * 1024 * 1024
+                   && (request.resource.contentType.matches('application/pdf')
+                       || request.resource.contentType.matches('image/.*'));
+
+      // Read allowed for the owner citizen, authenticated officers, and admins
+      allow read: if request.auth != null;
+      allow delete: if request.auth != null && request.auth.token.role == 'admin';
+    }
+
+    // Public Government Circulars, Forms & Assets
+    match /public/{allPaths=**} {
+      allow read: if true;
+      allow write: if request.auth != null && request.auth.token.role == 'admin';
+    }
+
+    // Receipt PDF Archives
+    match /receipts/{receiptId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && (
+        request.auth.token.role == 'officer' ||
+        request.auth.token.role == 'admin'
+      );
+    }
+  }
+}

@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hyperledger Fabric Blockchain Explorer | Smart PDS India</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- Top Strip -->
+  <div class="gov-top-strip">
+    <div>
+      <span>🇮🇳 Government of India | National PDS Hyperledger Fabric Blockchain Explorer</span>
+    </div>
+    <div>
+      <a href="index.html">← Portal Home</a>
+      <a href="admin-dashboard.html">Admin Command</a>
+      <a href="officer-login.html">Officer Terminal</a>
+    </div>
+  </div>
+
+  <nav class="navbar">
+    <a href="index.html" class="brand-wrapper">
+      <div class="emblem-icon" style="background: linear-gradient(135deg, #0A2540 0%, #163860 100%);">⛓️</div>
+      <div class="brand-text">
+        <h1>NATIONAL PDS BLOCKCHAIN EXPLORER</h1>
+        <p>HYPERLEDGER FABRIC DISTRIBUTED SUPPLY CHAIN LEDGER</p>
+      </div>
+    </a>
+    <ul class="nav-links">
+      <li><a href="index.html" class="nav-link">Home</a></li>
+      <li><a href="blockchain-explorer.html" class="nav-link active">Explorer</a></li>
+      <li><a href="customer-dashboard.html" class="nav-link">Beneficiary Portal</a></li>
+    </ul>
+  </nav>
+
+  <div style="max-width: 1200px; margin: 36px auto; padding: 0 20px;">
+
+    <!-- Network Statistics Hero -->
+    <div class="card" style="background: linear-gradient(135deg, #0A2540 0%, #002D62 100%); color: white; padding: 32px; margin-bottom: 28px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px;">
+        <div>
+          <div style="display: flex; gap: 10px; margin-bottom: 8px;">
+            <span class="badge badge-success">CHANNEL: pdschannel</span>
+            <span class="badge badge-info">CHAINCODE: smartpds v1.0</span>
+            <span class="badge badge-navy" style="background: rgba(255,255,255,0.15); color: white;">CONSENSUS: RAFT</span>
+          </div>
+          <h2 style="font-size: 1.8rem; font-weight: 800;">Cryptographic Food Grain Ledger</h2>
+          <p style="font-size: 0.9rem; color: #B3C2D4; max-width: 650px;">
+            Verifiable provenance tracking connecting Central Mandi Procurements, FCI Warehouses, Fair Price Shops, and Citizen Biometric Transactions.
+          </p>
+        </div>
+
+        <div style="display: flex; gap: 24px; text-align: center;">
+          <div style="background: rgba(255,255,255,0.08); padding: 16px 24px; border-radius: var(--radius-md);">
+            <div style="font-size: 2.2rem; font-weight: 800; font-family: var(--font-mono); color: #36B37E;" id="net-block-height">0</div>
+            <div style="font-size: 0.75rem; text-transform: uppercase; color: #B3C2D4;">Committed Blocks</div>
+          </div>
+          <div style="background: rgba(255,255,255,0.08); padding: 16px 24px; border-radius: var(--radius-md);">
+            <div style="font-size: 2.2rem; font-weight: 800; font-family: var(--font-mono); color: #80FF72;" id="net-tx-count">0</div>
+            <div style="font-size: 0.75rem; text-transform: uppercase; color: #B3C2D4;">Total Transactions</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Multi-Criteria Search Filter Bar -->
+    <div class="card" style="margin-bottom: 28px;">
+      <h3 style="font-size: 1.1rem; color: var(--navy-primary); margin-bottom: 12px;">Query Blockchain Ledger & Provenance</h3>
+      <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+        <input type="text" id="bc-search-query" class="form-control" placeholder="Search by Batch ID, Tx Hash, Office ID, or Commodity..." style="flex: 2;" value="BATCH-RICE-2025-01">
+        <select id="bc-action-filter" class="form-control" style="flex: 1;">
+          <option value="">All Smart Contract Actions</option>
+          <option value="registerProcurement">registerProcurement</option>
+          <option value="dispatchToOffice">dispatchToOffice</option>
+          <option value="confirmOfficeReceipt">confirmOfficeReceipt</option>
+          <option value="distributeRation">distributeRation</option>
+        </select>
+        <button class="btn btn-primary" onclick="executeBlockchainSearch()">Search Ledger</button>
+      </div>
+    </div>
+
+    <!-- Vertical Supply Chain Batch Provenance Timeline -->
+    <div class="card" style="margin-bottom: 28px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 14px; margin-bottom: 18px;">
+        <div>
+          <h3 style="font-size: 1.15rem; color: var(--navy-primary);">🌾 End-to-End Supply Chain Provenance Timeline</h3>
+          <p style="font-size: 0.85rem; color: var(--text-muted);">
+            Batch ID: <strong id="provenance-batch-title" style="color: var(--navy-primary); font-family: var(--font-mono);">BATCH-RICE-2025-01</strong>
+          </p>
+        </div>
+        <div>
+          <span class="badge badge-success">CRYPTO VALIDATED</span>
+        </div>
+      </div>
+
+      <div id="vertical-timeline-container">
+        <!-- Vertical timeline rendered dynamically -->
+      </div>
+    </div>
+
+    <!-- Cryptographic Transaction Verifier Tool -->
+    <div class="card" style="margin-bottom: 28px; border-top: 4px solid var(--blue-primary);">
+      <h3 style="font-size: 1.15rem; color: var(--navy-primary); margin-bottom: 8px;">Cryptographic State & Block Hash Verifier</h3>
+      <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 16px;">
+        Inspect the mathematical SHA-256 block hash, Merkle tree root, and digital signature state for any transaction on the ledger.
+      </p>
+
+      <div style="display: flex; gap: 12px; margin-bottom: 16px;">
+        <input type="text" id="verify-tx-input" class="form-control" placeholder="Enter Transaction Hash (e.g. 0x...)" style="font-family: var(--font-mono);">
+        <button class="btn btn-primary" onclick="verifyTxHashInput()">Verify Cryptographic Proof</button>
+      </div>
+
+      <div id="tx-verification-result" style="display: none; padding: 18px; border-radius: var(--radius-sm); font-size: 0.85rem; font-family: var(--font-mono);"></div>
+    </div>
+
+    <!-- Latest Committed Ledger Transactions Table -->
+    <div class="card">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+        <h3 style="font-size: 1.15rem; color: var(--navy-primary);">Latest Committed Transactions</h3>
+        <button class="btn btn-outline btn-sm" onclick="loadAllTransactions()">🔄 Refresh Feed</button>
+      </div>
+
+      <div class="table-responsive">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Block #</th>
+              <th>Transaction Hash</th>
+              <th>Chaincode Method</th>
+              <th>Source / Submitter</th>
+              <th>Destination Office</th>
+              <th>Payload Details</th>
+              <th>Status</th>
+              <th>Timestamp</th>
+              <th>Verify</th>
+            </tr>
+          </thead>
+          <tbody id="all-transactions-tbody">
+            <!-- Dynamically populated -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+
+  <footer class="gov-footer" style="margin-top: 60px;">
+    <div class="footer-bottom" style="border: none; padding: 0;">
+      <p>© 2026 National Smart PDS Portal. Hyperledger Fabric Blockchain Infrastructure. Government of India.</p>
+    </div>
+  </footer>
+
+  <script src="js/api.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      loadNetworkStats();
+      traceProvenanceBatch('BATCH-RICE-2025-01');
+      loadAllTransactions();
+    });
+
+    async function loadNetworkStats() {
+      try {
+        const res = await apiRequest('/blockchain/stats');
+        if (res.success) {
+          document.getElementById('net-block-height').textContent = `#${res.stats.currentBlockHeight}`;
+          document.getElementById('net-tx-count').textContent = res.stats.totalTransactions.toLocaleString();
+        }
+      } catch (e) {
+        console.warn('Network stats error:', e);
+      }
+    }
+
+    async function traceProvenanceBatch(batchId) {
+      const container = document.getElementById('vertical-timeline-container');
+      document.getElementById('provenance-batch-title').textContent = batchId;
+      container.innerHTML = '<p style="text-align:center;">Tracing provenance across Hyperledger Fabric nodes...</p>';
+
+      try {
+        const res = await apiRequest(`/blockchain/batch/${encodeURIComponent(batchId)}`);
+        const timeline = res.timeline || [];
+
+        if (timeline.length === 0) {
+          container.innerHTML = `<p style="color:var(--red-primary); text-align:center;">No blockchain provenance records found for ${batchId}.</p>`;
+          return;
+        }
+
+        const stages = [
+          { key: 'GOVERNMENT_PROCUREMENT', icon: '🌾', label: 'Government Mandi Procurement' },
+          { key: 'CENTRAL_WAREHOUSE', icon: '🏢', label: 'Central FCI Warehouse Silo Deposit' },
+          { key: 'TRANSIT_WAREHOUSE', icon: '🚚', label: 'Buffer Transit Movement' },
+          { key: 'OFFICE_DISPATCH', icon: '📦', label: 'Fair Price Shop Dispatch' },
+          { key: 'OFFICE_RECEIPT', icon: '🏪', label: 'Fair Price Shop Delivery & Weigh-In' },
+          { key: 'BENEFICIARY_DISTRIBUTION', icon: '👤', label: 'Beneficiary Biometric Handover' }
+        ];
+
+        const stepsHtml = timeline.map((step, idx) => `
+          <div class="timeline-step verified">
+            <div class="timeline-badge">${idx + 1}</div>
+            <div class="timeline-content">
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                <h4 style="color:var(--navy-primary); font-size:1.05rem;">${step.title}</h4>
+                <span class="badge badge-success">BLOCK #${step.blockNumber}</span>
+              </div>
+              <div style="font-size:0.85rem; color:var(--text-muted); margin: 4px 0 8px 0;">
+                <strong>Actor:</strong> ${step.actor} | <strong>Location:</strong> ${step.location}
+              </div>
+              <div style="font-size:0.75rem; font-family:var(--font-mono); color:var(--navy-primary); background:#F8FAFC; padding:8px; border-radius:4px; word-break:break-all;">
+                Tx Hash: <span style="color:var(--blue-primary);">${step.txId}</span><br>
+                Timestamp: ${step.timestamp?.slice(0, 19).replace('T', ' ')} | Status: <strong>${step.status}</strong>
+              </div>
+            </div>
+          </div>
+        `).join('');
+
+        container.innerHTML = `<div class="timeline">${stepsHtml}</div>`;
+      } catch (e) {
+        container.innerHTML = `<p style="color:var(--red-primary); text-align:center;">Error: ${e.message}</p>`;
+      }
+    }
+
+    async function loadAllTransactions() {
+      const tbody = document.getElementById('all-transactions-tbody');
+      tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;">Loading ledger blocks...</td></tr>';
+
+      try {
+        const action = document.getElementById('bc-action-filter')?.value;
+        let url = '/blockchain/transactions?limit=30';
+        if (action) url += `&action=${action}`;
+
+        const res = await apiRequest(url);
+        const txs = res.transactions || [];
+
+        if (txs.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; color:var(--text-muted);">No transactions match filter.</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = txs.map(t => {
+          const payload = t.payload || {};
+          let detailsStr = '';
+          if (payload.commodity) detailsStr += `${payload.commodity} (${payload.quantity || ''} ${payload.unit || ''})`;
+          if (payload.items) detailsStr += (payload.items || []).map(i => `${i.commodity}: ${i.quantity}kg`).join(', ');
+          if (payload.distributedItems) detailsStr += (payload.distributedItems || []).map(i => `${i.commodity}: ${i.quantity}kg`).join(', ');
+          if (!detailsStr) detailsStr = payload.reason || payload.network || 'Genesis State Entry';
+
+          const destOffice = payload.destOfficeId || payload.officeId || '--';
+
+          return `
+            <tr>
+              <td><strong>#${t.blockNumber}</strong></td>
+              <td><code title="${t.txId}">${t.txId.substring(0, 16)}...</code></td>
+              <td><span class="badge badge-navy">${t.action}</span></td>
+              <td>${t.submittedBy || 'SYSTEM'}</td>
+              <td><code>${destOffice}</code></td>
+              <td><span style="font-size:0.8rem;">${detailsStr}</span></td>
+              <td><span class="badge ${t.status === 'COMMITTED_LEDGER' ? 'badge-success' : 'badge-warning'}">${t.status}</span></td>
+              <td>${t.timestamp?.slice(0, 19).replace('T', ' ')}</td>
+              <td>
+                <button class="btn btn-outline btn-sm" onclick="populateAndVerifyTx('${t.txId}')">Verify</button>
+              </td>
+            </tr>
+          `;
+        }).join('');
+      } catch (e) {
+        tbody.innerHTML = `<tr><td colspan="9" style="color:var(--red-primary);">Error: ${e.message}</td></tr>`;
+      }
+    }
+
+    function executeBlockchainSearch() {
+      const q = document.getElementById('bc-search-query').value.trim();
+      if (q.startsWith('BATCH-') || q.includes('RICE') || q.includes('WHEAT')) {
+        traceProvenanceBatch(q);
+      } else if (q.startsWith('0x')) {
+        populateAndVerifyTx(q);
+      }
+      loadAllTransactions();
+    }
+
+    function populateAndVerifyTx(txId) {
+      document.getElementById('verify-tx-input').value = txId;
+      verifyTxHashInput();
+      window.scrollTo({ top: document.getElementById('verify-tx-input').offsetTop - 120, behavior: 'smooth' });
+    }
+
+    async function verifyTxHashInput() {
+      const txId = document.getElementById('verify-tx-input').value.trim();
+      const resultDiv = document.getElementById('tx-verification-result');
+      if (!txId) return;
+
+      resultDiv.style.display = 'block';
+      resultDiv.style.background = '#F8FAFC';
+      resultDiv.style.color = '#172B4D';
+      resultDiv.innerHTML = 'Computing SHA-256 block hash & validating chain continuity...';
+
+      try {
+        const res = await apiRequest(`/blockchain/verify/${encodeURIComponent(txId)}`);
+        const v = res.verification;
+
+        if (v.isValid) {
+          resultDiv.style.background = '#E3FCEF';
+          resultDiv.style.color = '#006644';
+          resultDiv.style.border = '1px solid #ABF5D1';
+          resultDiv.innerHTML = `
+            <strong>✓ CRYPTOGRAPHIC VERIFICATION PASSED (LEDGER INTEGRITY 100%)</strong><br>
+            Transaction Hash: ${v.txId}<br>
+            Block Number: #${v.blockNumber}<br>
+            Block Hash: ${v.blockHash}<br>
+            Merkle Root: ${v.merkleRoot}<br>
+            Action Method: ${v.action}<br>
+            Block SHA-256 Checksum: ${v.cryptographicProof.blockIntegrity}<br>
+            Chain Continuity Link: ${v.cryptographicProof.chainContinuity}<br>
+            Ledger Consensus Status: ${v.status}
+          `;
+        } else {
+          resultDiv.style.background = '#FFEBE6';
+          resultDiv.style.color = '#BF2600';
+          resultDiv.style.border = '1px solid #FFBDAD';
+          resultDiv.innerHTML = `❌ Verification Failed: ${v.message || 'Transaction could not be validated on the current ledger.'}`;
+        }
+      } catch (e) {
+        resultDiv.style.background = '#FFEBE6';
+        resultDiv.style.color = '#BF2600';
+        resultDiv.innerHTML = `❌ Error: ${e.message}`;
+      }
+    }
+  </script>
+</body>
+</html>
+

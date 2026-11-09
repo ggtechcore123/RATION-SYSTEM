@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Citizen Beneficiary Portal | Smart PDS India</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- Top Strip -->
+  <div class="gov-top-strip">
+    <div>
+      <span>🇮🇳 Government of India | National Food Security Act (NFSA) Beneficiary Dashboard</span>
+    </div>
+    <div>
+      <a href="index.html">← Portal Home</a>
+      <a href="customer-registration.html">New Registration</a>
+      <a href="blockchain-explorer.html">Blockchain Explorer</a>
+    </div>
+  </div>
+
+  <nav class="navbar">
+    <a href="index.html" class="brand-wrapper">
+      <div class="emblem-icon">👤</div>
+      <div class="brand-text">
+        <h1>CITIZEN BENEFICIARY PORTAL</h1>
+        <p>SMART RATION ENTITLEMENT & LEDGER TRANSPARENCY</p>
+      </div>
+    </a>
+  </nav>
+
+  <div style="max-width: 1100px; margin: 36px auto; padding: 0 20px;">
+
+    <!-- Beneficiary Lookup Card (If not logged in) -->
+    <div class="card" id="lookup-card" style="margin-bottom: 28px; border-top: 4px solid var(--green-primary);">
+      <h3 style="font-size: 1.15rem; color: var(--navy-primary); margin-bottom: 8px;">Access Your Digital Ration Card</h3>
+      <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 16px;">
+        Enter your Customer ID (e.g. <code>CUST-TN-2025-001</code>) or Ration Card Number (e.g. <code>RC-TN-772819</code>):
+      </p>
+      <form id="cust-login-form" style="display: flex; gap: 12px; max-width: 600px;">
+        <input type="text" id="cust-ident-input" class="form-control" placeholder="Customer ID or Ration Card Number" value="CUST-TN-2025-001" required>
+        <button type="submit" class="btn btn-success">View My Quota →</button>
+      </form>
+    </div>
+
+    <!-- Active Profile & Entitlement View -->
+    <div id="customer-profile-section" style="display: none;">
+
+      <!-- Beneficiary Identity Banner -->
+      <div class="card" style="margin-bottom: 24px; border-left: 6px solid var(--green-primary);">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <div>
+            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 6px;">
+              <span class="badge badge-success" id="prof-status-badge">APPROVED</span>
+              <span class="badge badge-navy" id="prof-category-badge">PHH - Priority Household</span>
+            </div>
+            <h2 style="font-size: 1.6rem; color: var(--navy-primary);" id="prof-name">Gowtham N K</h2>
+            <p style="font-size: 0.88rem; color: var(--text-muted);">
+              Customer ID: <strong id="prof-cust-id">CUST-TN-2025-001</strong> |
+              Ration Card: <strong id="prof-card-no">RC-TN-772819</strong> |
+              Family Head: <strong id="prof-head-name">Gowtham N K</strong>
+            </p>
+            <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 4px;">
+              Assigned Fair Price Shop: <strong id="prof-shop-name" style="color: var(--navy-primary);">Chennai Central Fair Price Shop #01 (OFF001)</strong>
+            </p>
+          </div>
+          <div style="text-align: right;">
+            <div style="font-size: 0.78rem; color: var(--text-muted);">Enrolled Biometric Template Hash:</div>
+            <code id="prof-fp-ref" style="font-size: 0.82rem; color: var(--green-primary); font-family: var(--font-mono);">FP-REF-GOWTHAM01</code>
+          </div>
+        </div>
+      </div>
+
+      <!-- Current Month Quota Balance Cards -->
+      <h3 style="font-size: 1.15rem; color: var(--navy-primary); margin-bottom: 14px;">Current Month Food Grain Entitlement Quota</h3>
+      <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; margin-bottom: 28px;" id="quota-cards-grid">
+        <!-- Dynamically rendered commodity balance cards -->
+      </div>
+
+      <!-- Enrolled Family Members -->
+      <div class="card" style="margin-bottom: 28px;">
+        <h3 style="font-size: 1.05rem; color: var(--navy-primary); margin-bottom: 12px;">Registered Family Unit (Biometric Authorized Collectors)</h3>
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 16px;">Any of the following enrolled family members can authenticate via ESP32 optical sensor to collect household rations.</p>
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Member ID</th>
+                <th>Full Name</th>
+                <th>Relationship</th>
+                <th>Age</th>
+                <th>Biometric Status</th>
+                <th>Collection Authorization</th>
+              </tr>
+            </thead>
+            <tbody id="family-table-body">
+              <!-- Populated dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Past Collection History with Blockchain Verifications -->
+      <div class="card">
+        <h3 style="font-size: 1.05rem; color: var(--navy-primary); margin-bottom: 14px;">My Past Ration Collections & Blockchain Proofs</h3>
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Receipt No</th>
+                <th>Items Collected</th>
+                <th>Amount Paid</th>
+                <th>Collector</th>
+                <th>Fair Price Shop</th>
+                <th>Date & Time</th>
+                <th>Ledger Audit Hash</th>
+                <th>Digital Receipt</th>
+              </tr>
+            </thead>
+            <tbody id="cust-history-tbody">
+              <!-- Populated dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <script src="js/api.js"></script>
+  <script>
+    const loginForm = document.getElementById('cust-login-form');
+    const identInput = document.getElementById('cust-ident-input');
+    const profileSection = document.getElementById('customer-profile-section');
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const savedId = localStorage.getItem('pds_customer_token') || 'CUST-TN-2025-001';
+      if (savedId) {
+        identInput.value = savedId;
+        loadCustomerProfile(savedId);
+      }
+    });
+
+    loginForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const val = identInput.value.trim();
+      if (val) loadCustomerProfile(val);
+    });
+
+    async function loadCustomerProfile(identifier) {
+      try {
+        const entRes = await apiRequest(`/distribution/entitlement/${encodeURIComponent(identifier)}`);
+        const c = entRes.customer;
+        const ent = entRes.entitlement;
+
+        profileSection.style.display = 'block';
+
+        document.getElementById('prof-name').textContent = c.fullName;
+        document.getElementById('prof-cust-id').textContent = c.customerId;
+        document.getElementById('prof-card-no').textContent = c.rationCardNumber;
+        document.getElementById('prof-head-name').textContent = c.familyHeadName || c.fullName;
+        document.getElementById('prof-shop-name').textContent = c.assignedOfficeName || c.assignedOfficeId;
+        document.getElementById('prof-fp-ref').textContent = c.fingerprintRef || 'ENROLLED';
+        document.getElementById('prof-category-badge').textContent = `${ent.categoryName} (${c.rationCardCategory})`;
+
+        // Quota Cards
+        const quotaGrid = document.getElementById('quota-cards-grid');
+        quotaGrid.innerHTML = ent.items.map(item => `
+          <div class="card" style="border-top: 4px solid var(--green-primary);">
+            <h5 style="color:var(--text-muted); font-size:0.8rem; text-transform:uppercase;">${item.name}</h5>
+            <div style="font-size:1.8rem; font-weight:800; color:var(--navy-primary); font-family:var(--font-mono); margin:6px 0;">
+              ${item.remaining} ${item.unit}
+            </div>
+            <div style="font-size:0.75rem; color:var(--text-muted);">
+              Monthly Quota: <strong>${item.monthlyEntitlement} ${item.unit}</strong><br>
+              Already Received: <strong>${item.alreadyReceived} ${item.unit}</strong>
+            </div>
+          </div>
+        `).join('');
+
+        // Family Table
+        const famTbody = document.getElementById('family-table-body');
+        const rows = (c.familyMembers || []).map(m => `
+          <tr>
+            <td><strong>${m.memberId}</strong></td>
+            <td>${m.fullName}</td>
+            <td>${m.relationship}</td>
+            <td>${m.age}</td>
+            <td><span class="badge badge-success">${m.fingerprintStatus || 'ENROLLED'}</span></td>
+            <td><span style="color:var(--green-primary); font-weight:600;">✓ Authorized</span></td>
+          </tr>
+        `).join('');
+
+        famTbody.innerHTML = `
+          <tr style="background:#F0FDF4;">
+            <td><strong>HEAD</strong></td>
+            <td><strong>${c.fullName}</strong></td>
+            <td>Head of Household</td>
+            <td>--</td>
+            <td><span class="badge badge-success">${c.fingerprintStatus || 'ENROLLED'}</span></td>
+            <td><span style="color:var(--green-primary); font-weight:600;">✓ Primary Beneficiary</span></td>
+          </tr>
+          ${rows}
+        `;
+
+        // History Table
+        const histRes = await apiRequest(`/distribution/history?customerId=${c.customerId}`);
+        const histTbody = document.getElementById('cust-history-tbody');
+        const dists = histRes.distributions || [];
+
+        if (dists.length === 0) {
+          histTbody.innerHTML = '<tr><td colspan="8" style="text-align:center; color:var(--text-muted);">No distribution records for this month yet.</td></tr>';
+        } else {
+          histTbody.innerHTML = dists.map(d => {
+            const itemsStr = (d.items || []).map(i => `${i.commodity}: ${i.quantity}${i.unit || 'kg'}`).join(', ');
+            return `
+              <tr>
+                <td><strong>${d.receiptNumber}</strong></td>
+                <td>${itemsStr}</td>
+                <td><strong>₹${(d.totalAmountPaid || 0).toFixed(2)}</strong></td>
+                <td>${d.authenticatedMember || c.fullName}</td>
+                <td><code>${d.officeId}</code></td>
+                <td>${d.timestamp?.slice(0, 19).replace('T', ' ')}</td>
+                <td><code title="${d.biometricVerificationRef}">${d.biometricVerificationRef?.substring(0, 16)}...</code></td>
+                <td>
+                  <button class="btn btn-outline btn-sm" onclick="printReceipt(${JSON.stringify(d).replace(/"/g, '&quot;')})">View Receipt</button>
+                </td>
+              </tr>
+            `;
+          }).join('');
+        }
+
+        showToast('Beneficiary quota profile loaded.', 'success');
+      } catch (e) {
+        showToast(e.message, 'error');
+      }
+    }
+  </script>
+</body>
+</html>
+
