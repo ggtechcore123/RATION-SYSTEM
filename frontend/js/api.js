@@ -6,13 +6,25 @@
 // Route local static-server and file:// requests to the local API server.
 const BACKEND_PORT = 5000;
 const isFileProtocol = window.location.protocol === 'file:';
-const isDevLiveServer = window.location.port && window.location.port !== String(BACKEND_PORT);
+const isGitHubPages = window.location.hostname.includes('github.io');
+const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+const isDevLiveServer = isLocalhost && window.location.port && window.location.port !== String(BACKEND_PORT);
 const localBackendOrigin = `http://${isFileProtocol ? 'localhost' : window.location.hostname}:${BACKEND_PORT}`;
-const API_BASE = isFileProtocol
-  ? `${localBackendOrigin}/api`
-  : isDevLiveServer
-    ? `${window.location.protocol}//${window.location.hostname}:${BACKEND_PORT}/api`
-    : '/api';
+
+// Custom API Gateway override if user hosts backend on Render/Railway/Fly
+const customBackendUrl = localStorage.getItem('pds_backend_api_url');
+
+const API_BASE = customBackendUrl
+  ? customBackendUrl.replace(/\/$/, '')
+  : isFileProtocol
+    ? `${localBackendOrigin}/api`
+    : isDevLiveServer
+      ? `${window.location.protocol}//${window.location.hostname}:${BACKEND_PORT}/api`
+      : isLocalhost && window.location.port === String(BACKEND_PORT)
+        ? '/api'
+        : isGitHubPages
+          ? null // Native direct client mode on GitHub Pages
+          : '/api';
 
 // Toast Notifications
 function showToast(message, type = 'info', duration = 3500) {
@@ -48,9 +60,19 @@ function showToast(message, type = 'info', duration = 3500) {
   }, duration);
 }
 
-// Global API Request Helper
+// Global API Request Helper (Hybrid: Real Node.js Server + GitHub Pages Client Engine)
 async function apiRequest(endpoint, options = {}) {
-  const url = `${API_BASE}${endpoint}`;
+  // 1. If running natively on GitHub Pages without a remote backend, use client database directly
+  if (isGitHubPages && !customBackendUrl && window.PDSClientDB) {
+    try {
+      return await window.PDSClientDB.handleApi(endpoint, options);
+    } catch (err) {
+      console.error(`[GitHub Pages Direct Engine] Error on ${endpoint}:`, err);
+      throw err;
+    }
+  }
+
+  const url = `${API_BASE || '/api'}${endpoint}`;
   const headers = options.headers || {};
 
   // Attach auth tokens
@@ -76,12 +98,20 @@ async function apiRequest(endpoint, options = {}) {
       data = await response.json();
     } else {
       const rawText = await response.text();
-      if (rawText.trim().startsWith('<')) {
-        throw new Error(`API returned an HTML response (${response.status}) instead of JSON. Ensure the Node.js backend server is running on port ${BACKEND_PORT}.`);
+      // If we got an HTML response (e.g. GitHub Pages 404 or Five Server redirect)
+      if (rawText.trim().startsWith('<') || response.status === 404) {
+        if (window.PDSClientDB) {
+          console.warn(`[API Fallback] Server at ${url} returned HTML (${response.status}). Routing through PDSClientDB...`);
+          return await window.PDSClientDB.handleApi(endpoint, options);
+        }
+        throw new Error(`API returned HTML response (${response.status}) instead of JSON. Ensure backend is running.`);
       }
       try {
         data = JSON.parse(rawText);
       } catch (e) {
+        if (window.PDSClientDB) {
+          return await window.PDSClientDB.handleApi(endpoint, options);
+        }
         throw new Error(rawText || `Invalid response from server (${response.status})`);
       }
     }
@@ -92,7 +122,14 @@ async function apiRequest(endpoint, options = {}) {
 
     return data;
   } catch (error) {
-    console.error(`API Error on ${endpoint}:`, error);
+    console.warn(`API network call failed on ${endpoint}:`, error.message);
+
+    // If PDSClientDB is available, smoothly fall back without failing the user experience
+    if (window.PDSClientDB) {
+      console.log(`[API Auto-Recovery] Serving ${endpoint} via Client DB...`);
+      return await window.PDSClientDB.handleApi(endpoint, options);
+    }
+
     const msg = error.message || '';
     if (
       error instanceof TypeError ||
