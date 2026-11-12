@@ -353,7 +353,7 @@ async function submitRegistration() {
       document.getElementById('conf-cardNo').textContent = payload.rationCardNumber;
       document.getElementById('conf-fullName').textContent = payload.fullName;
       document.getElementById('conf-category').textContent = payload.rationCardCategory;
-      document.getElementById('conf-office').textContent = result.customer.assignedOfficeName || payload.assignedOfficeId;
+      document.getElementById('conf-office').textContent = (result.customer && result.customer.assignedOfficeName) || payload.assignedOfficeId;
       document.getElementById('conf-memberCount').textContent = `${payload.numberOfFamilyMembers} (Head + ${familyMembers.length} Members)`;
       document.getElementById('conf-fpRef').textContent = headFp;
 

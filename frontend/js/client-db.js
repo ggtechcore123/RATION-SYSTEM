@@ -1157,7 +1157,7 @@
       }
 
       // 10. CUSTOMERS
-      if (cleanEndpoint === '/customers') {
+      if (cleanEndpoint === '/customers' || (cleanEndpoint === '/customers/register' && method === 'POST')) {
         if (method === 'GET') {
           const statusFilter = query.get('status');
           let list = this.data.customers;
@@ -1168,31 +1168,39 @@
         }
         if (method === 'POST') {
           const newId = `CUST-TN-2026-${String(this.data.customers.length + 1).padStart(3, '0')}`;
+          const officeId = body.assignedOfficeId || 'OFF001';
+          const matchedOffice = (this.data.offices || []).find(o => o.officeId === officeId || o.id === officeId);
           const newCust = {
             id: newId,
             customerId: newId,
             fullName: body.fullName,
+            dateOfBirth: body.dateOfBirth || '',
+            gender: body.gender || '',
             rationCardNumber: body.rationCardNumber,
             rationCardCategory: body.rationCardCategory || 'PHH',
             familyHeadName: body.familyHeadName || body.fullName,
             mobileNumber: body.mobileNumber,
-            emailAddress: body.emailAddress || '',
-            residentialAddress: body.residentialAddress || '',
+            emailAddress: body.email || body.emailAddress || '',
+            residentialAddress: body.address || body.residentialAddress || '',
             state: body.state || 'Tamil Nadu',
             district: body.district || 'Chennai',
             taluk: body.taluk || '',
             village: body.village || '',
             pincode: body.pincode || '',
-            assignedOfficeId: body.assignedOfficeId || 'OFF001',
+            assignedOfficeId: officeId,
+            assignedOfficeName: matchedOffice ? matchedOffice.officeName : officeId,
+            existingRationShop: body.existingRationShop || '',
             status: 'PENDING',
             fingerprintStatus: 'Successfully Enrolled',
+            fingerprintRef: body.fingerprintRef || '',
             fingerprintTemplateId: Math.floor(Math.random() * 200) + 10,
             familyMembers: body.familyMembers || [],
+            documents: body.documents || {},
             createdAt: new Date().toISOString()
           };
           this.data.customers.unshift(newCust);
           this.save();
-          return { success: true, customerId: newId, message: 'Customer registration submitted for review.' };
+          return { success: true, customerId: newId, customer: newCust, message: 'Customer registration submitted for review.' };
         }
       }
 
