@@ -36,10 +36,10 @@
     <div class="card" id="lookup-card" style="margin-bottom: 28px; border-top: 4px solid var(--green-primary);">
       <h3 style="font-size: 1.15rem; color: var(--navy-primary); margin-bottom: 8px;">Access Your Digital Ration Card</h3>
       <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 16px;">
-        Enter your Customer ID (e.g. <code>CUST-TN-2025-001</code>) or Ration Card Number (e.g. <code>RC-TN-772819</code>), or scan your enrolled fingerprint via ESP32 R307:
+        Enter your Customer ID (e.g. <code>ABCD001</code>) or Ration Card Number (e.g. <code>RC-TN-772819</code>), or scan your enrolled fingerprint via ESP32 R307:
       </p>
       <form id="cust-login-form" style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center;">
-        <input type="text" id="cust-ident-input" class="form-control" style="max-width: 340px;" placeholder="Customer ID or Ration Card Number" value="CUST-TN-2025-001" required>
+        <input type="text" id="cust-ident-input" class="form-control" style="max-width: 340px;" placeholder="Customer ID (e.g. ABCD001) or RC No" value="ABCD001" required>
         <button type="submit" class="btn btn-success">View My Quota →</button>
         <button type="button" class="btn btn-primary" style="background-color: var(--navy-primary);" id="btn-cust-fp-login" onclick="triggerCustomerFingerprintLogin()">
           👆 Scan Fingerprint to Login
@@ -215,7 +215,7 @@
     }
 
     document.addEventListener('DOMContentLoaded', () => {
-      const savedId = localStorage.getItem('pds_customer_token') || 'CUST-TN-2025-001';
+      const savedId = localStorage.getItem('pds_customer_token') || 'ABCD001';
       if (savedId) {
         identInput.value = savedId;
         loadCustomerProfile(savedId);
@@ -230,11 +230,24 @@
 
     async function loadCustomerProfile(identifier) {
       try {
-        const entRes = await apiRequest(`/distribution/entitlement/${encodeURIComponent(identifier)}`);
-        const c = entRes.customer;
-        const ent = entRes.entitlement;
+        let c = null;
+        let ent = null;
+
+        try {
+          const entRes = await apiRequest(`/distribution/entitlement/${encodeURIComponent(identifier)}`);
+          c = entRes.customer;
+          ent = entRes.entitlement;
+        } catch (entErr) {
+          // If PENDING/REJECTED, still allow viewing profile via /customers/track/
+          const trackRes = await apiRequest(`/customers/track/${encodeURIComponent(identifier)}`);
+          c = trackRes.customer;
+        }
 
         profileSection.style.display = 'block';
+
+        const statusBadge = document.getElementById('prof-status-badge');
+        statusBadge.textContent = c.status || 'APPROVED';
+        statusBadge.className = c.status === 'APPROVED' ? 'badge badge-success' : (c.status === 'REJECTED' ? 'badge badge-danger' : 'badge badge-warning');
 
         document.getElementById('prof-name').textContent = c.fullName;
         document.getElementById('prof-cust-id').textContent = c.customerId;
@@ -242,11 +255,14 @@
         document.getElementById('prof-head-name').textContent = c.familyHeadName || c.fullName;
         document.getElementById('prof-shop-name').textContent = c.assignedOfficeName || c.assignedOfficeId;
         document.getElementById('prof-fp-ref').textContent = c.fingerprintRef || 'ENROLLED';
-        document.getElementById('prof-category-badge').textContent = `${ent.categoryName} (${c.rationCardCategory})`;
+        document.getElementById('prof-category-badge').textContent = ent ? `${ent.categoryName} (${c.rationCardCategory})` : (c.rationCardCategory || 'PHH');
 
         // Quota Cards
         const quotaGrid = document.getElementById('quota-cards-grid');
-        quotaGrid.innerHTML = ent.items.map(item => `
+        if (!ent || !Array.isArray(ent.items)) {
+          quotaGrid.innerHTML = `<div class="card" style="grid-column: span 4; border-left: 4px solid var(--amber-text);"><p style="color: var(--amber-text); font-weight: 600;">⏳ Account Status: ${c.status}. Monthly food grain quota will be unlocked once Admin approves your application.</p></div>`;
+        } else {
+          quotaGrid.innerHTML = ent.items.map(item => `
           <div class="card" style="border-top: 4px solid var(--green-primary);">
             <h5 style="color:var(--text-muted); font-size:0.8rem; text-transform:uppercase;">${item.name}</h5>
             <div style="font-size:1.8rem; font-weight:800; color:var(--navy-primary); font-family:var(--font-mono); margin:6px 0;">
@@ -258,6 +274,7 @@
             </div>
           </div>
         `).join('');
+        }
 
         // Family Table
         const famTbody = document.getElementById('family-table-body');

@@ -9,7 +9,7 @@ let currentOfficeData = null;
 let activeVerifiedCustomer = null;
 let activeEntitlement = null;
 let currentReceivingDispatch = null;
-let keypadBuffer = 'CUST-TN-2025-001';
+let keypadBuffer = 'ABCD001';
 
 document.addEventListener('DOMContentLoaded', async () => {
   const token = localStorage.getItem('pds_officer_token');
@@ -296,9 +296,9 @@ async function submitInwardReceiptConfirmation() {
 
 // ESP32 KEYPAD & BIOMETRIC AUTHENTICATION SIMULATOR
 function pressKeypad(key) {
-  if (key === 'CLEAR') {
+  if (key === 'CLEAR' || key === '*') {
     keypadBuffer = '';
-  } else if (key === 'ENTER') {
+  } else if (key === 'ENTER' || key === '#') {
     if (keypadBuffer.length > 0) {
       document.getElementById('lcd-line-1').textContent = 'READY: PLACE FINGER';
       showToast(`Beneficiary ID ${keypadBuffer} registered. Place finger on optical prism.`, 'info');

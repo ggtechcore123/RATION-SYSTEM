@@ -15,7 +15,7 @@
   }
 }(typeof self !== 'undefined' ? self : this, function () {
 
-  const STORAGE_KEY = 'pds_client_db_v2';
+  const STORAGE_KEY = 'pds_client_db_v3';
 
   // Initial Pre-Seeded Datasets
   const INITIAL_DATA = {
@@ -364,8 +364,9 @@
     ],
     customers: [
       {
-        id: "CUST-TN-2025-001",
-        customerId: "CUST-TN-2025-001",
+        id: "ABCD001",
+        customerId: "ABCD001",
+        legacyCustomerId: "CUST-TN-2025-001",
         fullName: "Gowtham N K",
         rationCardNumber: "RC-TN-772819",
         rationCardCategory: "PHH",
@@ -381,18 +382,20 @@
         assignedOfficeName: "Chennai Central Fair Price Ration Shop #01",
         status: "APPROVED",
         fingerprintStatus: "Successfully Enrolled",
+        fingerprintRef: "FP-R307-SLOT1",
         fingerprintTemplateId: 1,
         familyMembers: [
-          { memberId: "MEM-01", name: "Gowtham N K", relationship: "Head", age: 24, gender: "Male", fingerprintTemplateId: 1, enrolled: true },
-          { memberId: "MEM-02", name: "Kavitha N", relationship: "Spouse", age: 23, gender: "Female", fingerprintTemplateId: 2, enrolled: true },
+          { memberId: "MEM-01", name: "Gowtham N K", relationship: "Head", age: 24, gender: "Male", fingerprintTemplateId: 1, fingerprintRef: "FP-R307-SLOT1", enrolled: true },
+          { memberId: "MEM-02", name: "Kavitha N", relationship: "Spouse", age: 23, gender: "Female", fingerprintTemplateId: 2, fingerprintRef: "FP-R307-SLOT2", enrolled: true },
           { memberId: "MEM-03", name: "Natarajan K", relationship: "Father", age: 54, gender: "Male", enrolled: false },
           { memberId: "MEM-04", name: "Kamala N", relationship: "Mother", age: 50, gender: "Female", enrolled: false }
         ],
         createdAt: "2025-10-01T10:00:00Z"
       },
       {
-        id: "CUST-TN-2025-002",
-        customerId: "CUST-TN-2025-002",
+        id: "ABCD002",
+        customerId: "ABCD002",
+        legacyCustomerId: "CUST-TN-2025-002",
         fullName: "Meenakshi Sundaram",
         rationCardNumber: "RC-TN-992144",
         rationCardCategory: "AAY",
@@ -408,17 +411,19 @@
         assignedOfficeName: "Chennai Central Fair Price Ration Shop #01",
         status: "APPROVED",
         fingerprintStatus: "Successfully Enrolled",
+        fingerprintRef: "FP-R307-SLOT3",
         fingerprintTemplateId: 3,
         familyMembers: [
-          { memberId: "MEM-05", name: "Meenakshi Sundaram", relationship: "Head", age: 48, gender: "Male", fingerprintTemplateId: 3, enrolled: true },
+          { memberId: "MEM-05", name: "Meenakshi Sundaram", relationship: "Head", age: 48, gender: "Male", fingerprintTemplateId: 3, fingerprintRef: "FP-R307-SLOT3", enrolled: true },
           { memberId: "MEM-06", name: "Revathi M", relationship: "Spouse", age: 44, gender: "Female", enrolled: false },
           { memberId: "MEM-07", name: "Karthik M", relationship: "Son", age: 19, gender: "Male", enrolled: false }
         ],
         createdAt: "2025-10-05T11:20:00Z"
       },
       {
-        id: "CUST-TN-2025-003",
-        customerId: "CUST-TN-2025-003",
+        id: "ABCD003",
+        customerId: "ABCD003",
+        legacyCustomerId: "CUST-TN-2025-003",
         fullName: "Ramesh Kumar",
         rationCardNumber: "RC-TN-441209",
         rationCardCategory: "PHH",
@@ -434,9 +439,10 @@
         assignedOfficeName: "Chennai Central Fair Price Ration Shop #01",
         status: "PENDING",
         fingerprintStatus: "Successfully Enrolled",
+        fingerprintRef: "FP-R307-SLOT4",
         fingerprintTemplateId: 4,
         familyMembers: [
-          { memberId: "MEM-08", name: "Ramesh Kumar", relationship: "Head", age: 36, gender: "Male", fingerprintTemplateId: 4, enrolled: true },
+          { memberId: "MEM-08", name: "Ramesh Kumar", relationship: "Head", age: 36, gender: "Male", fingerprintTemplateId: 4, fingerprintRef: "FP-R307-SLOT4", enrolled: true },
           { memberId: "MEM-09", name: "Deepa R", relationship: "Spouse", age: 32, gender: "Female", enrolled: false }
         ],
         createdAt: "2026-11-09T03:57:59.119Z"
@@ -1068,14 +1074,16 @@
       // Entitlement
       const entitlementMatch = cleanEndpoint.match(/^\/distribution\/entitlement\/([^\/]+)$/);
       if (entitlementMatch) {
-        const identifier = decodeURIComponent(entitlementMatch[1]).trim();
-        const customer = this.data.customers.find(c => 
-          c.customerId.toUpperCase() === identifier.toUpperCase() || 
-          c.rationCardNumber.toUpperCase() === identifier.toUpperCase()
+        const identifier = decodeURIComponent(entitlementMatch[1]).trim().toUpperCase();
+        const customer = this.data.customers.find(c =>
+          (c.customerId || '').toUpperCase() === identifier ||
+          (c.legacyCustomerId || '').toUpperCase() === identifier ||
+          (c.id || '').toUpperCase() === identifier ||
+          (c.rationCardNumber || '').toUpperCase() === identifier
         );
 
         if (!customer) {
-          throw new Error(`Beneficiary not found for "${identifier}". Enter CUST-TN-2025-001 or RC-TN-772819.`);
+          throw new Error(`Beneficiary not found for "${identifier}". Enter ABCD001 or RC-TN-772819.`);
         }
 
         if (customer.status !== 'APPROVED') {
@@ -1186,7 +1194,7 @@
           return { success: true, customers: list };
         }
         if (method === 'POST') {
-          const newId = `CUST-TN-2026-${String(this.data.customers.length + 1).padStart(3, '0')}`;
+          const newId = `ABCD${String(this.data.customers.length + 1).padStart(3, '0')}`;
           const officeId = body.assignedOfficeId || 'OFF001';
           const matchedOffice = (this.data.offices || []).find(o => o.officeId === officeId || o.id === officeId);
           const nextSlotId = body.fingerprintTemplateId || (this.data.customers.length + 10);
@@ -1274,7 +1282,11 @@
       const custTrackMatch = cleanEndpoint.match(/^\/customers\/track\/([^\/]+)$/);
       if (custTrackMatch) {
         const identifier = decodeURIComponent(custTrackMatch[1]).trim().toUpperCase();
-        const cust = this.data.customers.find(c => c.customerId.toUpperCase() === identifier || c.rationCardNumber.toUpperCase() === identifier);
+        const cust = this.data.customers.find(c =>
+          (c.customerId || '').toUpperCase() === identifier ||
+          (c.legacyCustomerId || '').toUpperCase() === identifier ||
+          (c.rationCardNumber || '').toUpperCase() === identifier
+        );
         if (cust) return { success: true, customer: cust };
         throw new Error(`No customer application found for "${identifier}".`);
       }
@@ -1395,10 +1407,12 @@
         let customer = null;
         let matchedMember = null;
 
-        // 1. Lookup by Customer ID or Ration Card Number
+        // 1. Lookup by Customer ID or Ration Card Number (supports ABCD format, e.g. ABCD001, CUST-TN-2025-001, RC-TN-772819)
         if (ident) {
           customer = (this.data.customers || []).find(c =>
             (c.customerId || '').toUpperCase() === ident ||
+            (c.legacyCustomerId || '').toUpperCase() === ident ||
+            (c.id || '').toUpperCase() === ident ||
             (c.rationCardNumber || '').toUpperCase() === ident
           );
         }

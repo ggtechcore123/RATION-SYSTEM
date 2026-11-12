@@ -649,12 +649,12 @@ body {
   100% { box-shadow: 0 0 0 0 rgba(0, 82, 204, 0); }
 }
 
-/* Numeric POS Keypad */
+/* 4x4 Matrix POS Keypad (0-9, A-D) */
 .pos-keypad-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 10px;
-  max-width: 240px;
+  max-width: 300px;
   margin: 16px auto;
 }
 

@@ -272,7 +272,7 @@ async function connectRegESP32IP() {
 }
 
 // Interactive ESP32 Biometric Scan
-async function triggerBiometricScan() {
+async function triggerBiometricScan(forceSimulator = false) {
   const subjectId = document.getElementById('biometric-member-select').value;
   const pad = document.getElementById('fp-touchpad');
   const badge = document.getElementById('fp-status-badge');
@@ -283,7 +283,9 @@ async function triggerBiometricScan() {
   badge.className = 'badge badge-info';
   badge.textContent = 'SCANNING FINGERPRINT';
   title.textContent = 'Capturing Biometric Ridges...';
-  desc.textContent = 'ESP32 Optical Sensor (R307) LED active. Please place finger steady (2 scans required on hardware).';
+  desc.textContent = forceSimulator
+    ? 'Using Virtual R307 Biometric Capture...'
+    : 'ESP32 Optical Sensor (R307) LED active. Please place finger steady (2 scans required on hardware).';
 
   try {
     const custIdent = document.getElementById('reg-cardNo').value || 'TEMP-CUST';
@@ -300,8 +302,8 @@ async function triggerBiometricScan() {
     let hwSlotId = sessionRes.assignedTemplateId || null;
     let hwTemplateRef = null;
 
-    // 2. If physical ESP32 is connected via USB or IP, perform real R307 capture
-    if (window.esp32Bridge && window.esp32Bridge.status === 'CONNECTED' && window.esp32Bridge.mode === 'USB') {
+    // 2. If physical ESP32 is connected via USB or IP (and not forced simulator), perform real R307 capture
+    if (!forceSimulator && window.esp32Bridge && window.esp32Bridge.status === 'CONNECTED' && window.esp32Bridge.mode === 'USB') {
       const enrollPromise = new Promise((resolve, reject) => {
         pendingEnrollResolver = resolve;
         setTimeout(() => {
@@ -316,7 +318,7 @@ async function triggerBiometricScan() {
       if (!hwRes.success) throw new Error(hwRes.error || 'R307 sensor failed to enroll.');
       hwSlotId = hwRes.slotId;
       hwTemplateRef = hwRes.templateRef;
-    } else if (window.esp32Bridge && window.esp32Bridge.status === 'CONNECTED' && window.esp32Bridge.mode === 'IP') {
+    } else if (!forceSimulator && window.esp32Bridge && window.esp32Bridge.status === 'CONNECTED' && window.esp32Bridge.mode === 'IP') {
       const ipRes = await window.esp32Bridge.triggerEnrollViaIP();
       if (ipRes && ipRes.success) {
         hwSlotId = ipRes.slotId;
@@ -324,7 +326,7 @@ async function triggerBiometricScan() {
       }
     } else {
       // Simulator delay for browser-only mode
-      await new Promise(r => setTimeout(r, 1200));
+      await new Promise(r => setTimeout(r, 1000));
     }
 
     // 3. Complete enrollment step
@@ -353,9 +355,9 @@ async function triggerBiometricScan() {
   } catch (err) {
     pad.classList.remove('scanning');
     badge.className = 'badge badge-danger';
-    badge.textContent = 'FAILED';
-    title.textContent = 'Scan Failed or Sensor Timed Out';
-    desc.textContent = err.message || 'Please clean sensor glass and try again.';
+    badge.textContent = 'HARDWARE SENSOR ERROR';
+    title.textContent = 'R307 Sensor Not Detected / Timed Out';
+    desc.innerHTML = `${err.message}. Check 5V VCC &amp; Yellow/White UART wires, or <a href="javascript:void(0)" onclick="triggerBiometricScan(true)" style="color: var(--blue-primary); font-weight: 700; text-decoration: underline;">click here to enroll via Software R307 Simulator</a>.`;
     showToast(`Biometric enrollment failed: ${err.message}`, 'error');
   }
 }

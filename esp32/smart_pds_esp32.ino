@@ -149,6 +149,38 @@ int findNextFreeSlot() {
   return 1;
 }
 
+bool initR307Sensor() {
+  // Try standard pins: RX=16 (Yellow TXD), TX=17 (White RXD) at 57600 baud
+  r307Serial.begin(57600, SERIAL_8N1, R307_RX_PIN, R307_TX_PIN);
+  delay(600);
+  finger.begin(57600);
+  for (int attempt = 0; attempt < 3; attempt++) {
+    if (finger.verifyPassword()) {
+      sensorReady = true;
+      return true;
+    }
+    delay(250);
+  }
+
+  // Fallback: Try swapped TX/RX pins (RX=17, TX=16) in case Yellow/White wires are reversed
+  r307Serial.end();
+  delay(100);
+  r307Serial.begin(57600, SERIAL_8N1, R307_TX_PIN, R307_RX_PIN);
+  delay(500);
+  finger.begin(57600);
+  if (finger.verifyPassword()) {
+    sensorReady = true;
+    Serial.println("R307_INFO:Detected with swapped RX/TX (17/16)");
+    return true;
+  }
+
+  // Restore default pins
+  r307Serial.end();
+  r307Serial.begin(57600, SERIAL_8N1, R307_RX_PIN, R307_TX_PIN);
+  sensorReady = false;
+  return false;
+}
+
 // ==================== R307 AUTHENTICATION ====================
 
 // Performs one non-blocking or short-check scan on R307.
@@ -184,6 +216,11 @@ int scanR307Once(bool showNoMatchError = true) {
 
 // Blocking scan used when Web Dashboard sends CMD:SCAN or POST /scan
 int waitAndScanR307(unsigned long timeoutMs = 10000) {
+  if (!sensorReady && !initR307Sensor()) {
+    Serial.println("R307_NO_MATCH");
+    signalError("R307 NOT FOUND", "Check 5V & Wires");
+    return -1;
+  }
   showLCD("PLACE FINGER", "On R307 Sensor..");
   unsigned long start = millis();
 
@@ -222,8 +259,9 @@ int waitAndScanR307(unsigned long timeoutMs = 10000) {
 // ==================== R307 ENROLLMENT ====================
 
 bool enrollR307Slot(int slotId, const String& customerId = "", const String& memberId = "head") {
-  if (!sensorReady) {
-    Serial.println("ENROLL_ERR:R307 sensor not ready");
+  if (!sensorReady && !initR307Sensor()) {
+    Serial.println("ENROLL_ERR:R307 not detected on GPIO16/17 (Check 5V VCC & Yellow/White wires)");
+    signalError("R307 NOT READY", "Check 5V & UART");
     return false;
   }
   if (slotId <= 0) slotId = findNextFreeSlot();
@@ -491,18 +529,12 @@ void setup() {
     Serial.println("[USB] WiFi skipped/offline. USB Web Serial Mode Ready.");
   }
 
-  // Initialize R307 Optical Fingerprint Sensor (57600 baud)
-  r307Serial.begin(57600, SERIAL_8N1, R307_RX_PIN, R307_TX_PIN);
-  delay(400);
-  finger.begin(57600);
-
-  if (finger.verifyPassword()) {
-    sensorReady = true;
+  // Initialize R307 Optical Fingerprint Sensor (57600 baud, with retry & pin-swap auto-detect)
+  if (initR307Sensor()) {
     finger.getParameters();
     Serial.println("R307_READY:Sensor OK. Capacity=" + String(finger.capacity));
     signalSuccess("R307 READY", "Cap: " + String(finger.capacity) + " Prints");
   } else {
-    sensorReady = false;
     Serial.println("R307_ERROR:Check 5V VCC, Yellow->GPIO16, White->GPIO17");
     signalError("R307 ERROR", "Check 5V & UART");
   }
@@ -539,14 +571,8 @@ void loop() {
         currentMode = MODE_SCANNING_AUTH;
         showLCD("ID: " + keypadBuffer, "Place Finger...");
       }
-    } else if (key == 'A') {
-      // Quick Local Enrollment shortcut via Keypad 'A'
-      enrollR307Slot(-1);
-    } else if (key == 'B') {
-      // Quick Manual Scan shortcut via Keypad 'B'
-      waitAndScanR307(10000);
-      showIdleLCD();
     } else {
+      // Allow 0-9 and A, B, C, D as Customer ID characters
       if (keypadBuffer.length() < 14) {
         keypadBuffer += key;
         showIdleLCD();

@@ -248,33 +248,37 @@
 
             <!-- 16x2 Character LCD Simulator -->
             <div style="background: #2B4C28; color: #80FF72; font-family: var(--font-mono); padding: 14px; border-radius: 4px; border: 3px solid #1A2E18; margin-bottom: 20px; text-align: left; box-shadow: inset 0 0 10px rgba(0,0,0,0.6);">
-              <div id="lcd-line-1" style="font-size: 0.95rem; font-weight: bold; letter-spacing: 1px;">ENTER CUST/RC ID:</div>
-              <div id="lcd-line-2" style="font-size: 1.15rem; font-weight: bold; margin-top: 4px; letter-spacing: 1.5px;">> <span id="lcd-input-display">CUST-TN-2025-001</span></div>
+              <div id="lcd-line-1" style="font-size: 0.95rem; font-weight: bold; letter-spacing: 1px;">ENTER CUST ID (ABCD+0-9):</div>
+              <div id="lcd-line-2" style="font-size: 1.15rem; font-weight: bold; margin-top: 4px; letter-spacing: 1.5px;">> <span id="lcd-input-display">ABCD001</span></div>
             </div>
 
-            <!-- Numeric Keypad Grid -->
+            <!-- 4x4 Matrix Keypad Grid (Matches Physical ESP32 Keypad) -->
             <div class="pos-keypad-grid">
               <button class="keypad-btn" onclick="pressKeypad('1')">1</button>
               <button class="keypad-btn" onclick="pressKeypad('2')">2</button>
               <button class="keypad-btn" onclick="pressKeypad('3')">3</button>
+              <button class="keypad-btn" style="background:#1B3B5A; color:#60A5FA;" onclick="pressKeypad('A')">A</button>
 
               <button class="keypad-btn" onclick="pressKeypad('4')">4</button>
               <button class="keypad-btn" onclick="pressKeypad('5')">5</button>
               <button class="keypad-btn" onclick="pressKeypad('6')">6</button>
+              <button class="keypad-btn" style="background:#1B3B5A; color:#60A5FA;" onclick="pressKeypad('B')">B</button>
 
               <button class="keypad-btn" onclick="pressKeypad('7')">7</button>
               <button class="keypad-btn" onclick="pressKeypad('8')">8</button>
               <button class="keypad-btn" onclick="pressKeypad('9')">9</button>
+              <button class="keypad-btn" style="background:#1B3B5A; color:#60A5FA;" onclick="pressKeypad('C')">C</button>
 
-              <button class="keypad-btn action-clear" onclick="pressKeypad('CLEAR')">CLR</button>
+              <button class="keypad-btn action-clear" onclick="pressKeypad('CLEAR')">*</button>
               <button class="keypad-btn" onclick="pressKeypad('0')">0</button>
-              <button class="keypad-btn action-enter" onclick="pressKeypad('ENTER')">ENT ↵</button>
+              <button class="keypad-btn action-enter" onclick="pressKeypad('ENTER')">#</button>
+              <button class="keypad-btn" style="background:#1B3B5A; color:#60A5FA;" onclick="pressKeypad('D')">D</button>
             </div>
 
             <p style="font-size: 0.78rem; color: #8F9CAE; margin-top: 14px;">
               Quick Presets:
-              <a href="javascript:void(0)" onclick="setKeypadInput('CUST-TN-2025-001')" style="color: #36B37E; text-decoration: none; margin-left: 6px;">Gowtham (PHH)</a> |
-              <a href="javascript:void(0)" onclick="setKeypadInput('CUST-TN-2025-002')" style="color: #36B37E; text-decoration: none; margin-left: 6px;">Meenakshi (AAY)</a>
+              <a href="javascript:void(0)" onclick="setKeypadInput('ABCD001')" style="color: #36B37E; text-decoration: none; margin-left: 6px;">Gowtham (ABCD001)</a> |
+              <a href="javascript:void(0)" onclick="setKeypadInput('ABCD002')" style="color: #36B37E; text-decoration: none; margin-left: 6px;">Meenakshi (ABCD002)</a>
             </p>
           </div>
 
