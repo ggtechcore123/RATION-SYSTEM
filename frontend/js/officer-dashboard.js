@@ -79,7 +79,7 @@ function setupESP32HardwareListeners() {
   window.esp32Bridge.onFingerprintMatch((matchData) => {
     if (matchData.success) {
       showToast(`R307 Optical Sensor: Matched Slot #${matchData.slotId}!`, 'success');
-      triggerPOSBiometricAuth(matchData.templateRef);
+      triggerPOSBiometricAuth(matchData.templateRef, matchData.slotId);
     } else {
       showToast(matchData.error || 'R307: Fingerprint not matched', 'warning');
     }
@@ -319,10 +319,10 @@ function setKeypadInput(val) {
   document.getElementById('lcd-line-1').textContent = 'READY: PLACE FINGER';
 }
 
-async function triggerPOSBiometricAuth(hardwareTemplateRef = null) {
+async function triggerPOSBiometricAuth(hardwareTemplateRef = null, hardwareSlotId = null) {
   const custId = keypadBuffer.trim();
-  if (!custId) {
-    showToast('Please enter Customer ID or Ration Card on keypad first.', 'warning');
+  if (!custId && !hardwareTemplateRef && !hardwareSlotId) {
+    showToast('Please enter Customer ID / Ration Card on keypad or scan an enrolled finger on ESP32.', 'warning');
     return;
   }
 
@@ -336,20 +336,25 @@ async function triggerPOSBiometricAuth(hardwareTemplateRef = null) {
   badge.className = 'badge badge-info';
   badge.textContent = 'SCANNING FINGERPRINT';
   title.textContent = 'Scanning Biometric Ridges...';
-  desc.textContent = 'ESP32 Optical Sensor active. Comparing minutiae against local hardware flash.';
+  desc.textContent = 'ESP32 Optical Sensor (R307) active. Comparing minutiae against enrolled templates.';
   outcome.style.display = 'none';
 
-  // If connected via USB, send scan command
-  if (window.esp32Bridge && window.esp32Bridge.mode === 'USB') {
+  // If connected via USB and user clicked button manually, trigger scan on ESP32
+  if (!hardwareTemplateRef && window.esp32Bridge && window.esp32Bridge.mode === 'USB' && window.esp32Bridge.status === 'CONNECTED') {
     window.esp32Bridge.triggerScanViaUSB();
+  } else if (!hardwareTemplateRef && window.esp32Bridge && window.esp32Bridge.mode === 'IP' && window.esp32Bridge.status === 'CONNECTED') {
+    const ipRes = await window.esp32Bridge.triggerScanViaIP();
+    if (ipRes && ipRes.success) {
+      hardwareTemplateRef = ipRes.templateRef;
+      hardwareSlotId = ipRes.slotId;
+    }
   }
 
   // Realistic sensor scan delay
-  await new Promise(r => setTimeout(r, 1000));
+  await new Promise(r => setTimeout(r, 900));
 
   try {
-    // Template ref from physical sensor or lookup fallback
-    const templateRef = hardwareTemplateRef || (custId.includes('002') ? 'FP-REF-MEENAKSHI01' : 'FP-REF-GOWTHAM01');
+    const templateRef = hardwareTemplateRef || '';
 
     const res = await apiRequest('/iot/verify', {
       method: 'POST',
@@ -357,17 +362,26 @@ async function triggerPOSBiometricAuth(hardwareTemplateRef = null) {
       body: JSON.stringify({
         customerIdOrRationCard: custId,
         templateRef,
+        slotId: hardwareSlotId,
         officeId: currentOfficeId
       })
     });
 
     pad.classList.remove('scanning');
 
-    if (res.verified) {
+    if (res.verified && res.customer) {
+      const cust = res.customer;
+      const memberName = (typeof res.matchedMember === 'object' && res.matchedMember?.name) ? res.matchedMember.name : (res.matchedMember || cust.fullName);
+      const memberRel = (typeof res.matchedMember === 'object' && res.matchedMember?.relationship) ? res.matchedMember.relationship : 'Head';
+
+      if (!keypadBuffer.trim()) {
+        setKeypadInput(cust.customerId);
+      }
+
       badge.className = 'badge badge-success';
       badge.textContent = 'CUSTOMER VERIFIED';
       title.textContent = 'Biometric Identity Confirmed ✓';
-      desc.textContent = `Matched: ${res.matchedMember.name} (${res.matchedMember.relationship}). Ration entitlement unlocked.`;
+      desc.textContent = `Matched: ${memberName} (${memberRel}). Ration entitlement unlocked.`;
 
       outcome.style.display = 'block';
       outcome.style.background = '#E3FCEF';
@@ -376,10 +390,10 @@ async function triggerPOSBiometricAuth(hardwareTemplateRef = null) {
         <div style="display:flex; justify-content:space-between; align-items:center;">
           <div>
             <h4 style="color:#006644;">CUSTOMER VERIFIED</h4>
-            <p style="font-size:0.85rem; color:#006644;">Beneficiary: <strong>${res.customer.fullName}</strong> | Card: <strong>${res.customer.rationCardNumber}</strong> (${res.customer.category})</p>
+            <p style="font-size:0.85rem; color:#006644;">Beneficiary: <strong>${cust.fullName}</strong> | Card: <strong>${cust.rationCardNumber}</strong> (${cust.category || 'PHH'})</p>
           </div>
           <div>
-            <button class="btn btn-success btn-sm" onclick="openDistributionForCustomer('${res.customer.customerId}', '${res.verificationRef}')">
+            <button class="btn btn-success btn-sm" onclick="openDistributionForCustomer('${cust.customerId}', '${res.verificationRef}')">
               Proceed to Ration Distribution →
             </button>
           </div>
@@ -387,15 +401,17 @@ async function triggerPOSBiometricAuth(hardwareTemplateRef = null) {
       `;
 
       activeVerifiedCustomer = {
-        ...res.customer,
+        ...cust,
         verificationRef: res.verificationRef,
         matchedMember: res.matchedMember
       };
 
       showToast('Citizen identity verified! Opening entitlement schedule...', 'success');
       setTimeout(() => {
-        openDistributionForCustomer(res.customer.customerId, res.verificationRef);
+        openDistributionForCustomer(cust.customerId, res.verificationRef);
       }, 1200);
+    } else {
+      throw new Error(res.reason || res.message || 'Biometric verification failed.');
     }
   } catch (err) {
     pad.classList.remove('scanning');

@@ -720,11 +720,22 @@
         if (rem > 0) fullReceived = false;
       }
 
+      const items = Object.values(remainingQuota).map(r => ({
+        commodity: r.commodity,
+        name: r.name,
+        monthlyEntitlement: r.allocated,
+        alreadyReceived: r.distributed,
+        remaining: r.remaining,
+        unit: r.unit,
+        pricePerUnit: r.pricePerUnit
+      }));
+
       return {
         category,
         categoryName: category === 'AAY' ? 'Antyodaya Anna Yojana (AAY)' : category === 'PHH' ? 'Priority Household (PHH)' : 'Non-Priority Household (NPHH)',
         activeMembersCount: activeMembers,
         quota,
+        items,
         distributedThisMonth,
         remainingQuota,
         fullEntitlementReceived: fullReceived
@@ -1157,6 +1168,14 @@
       }
 
       // 10. CUSTOMERS
+      if (cleanEndpoint === '/customers/upload-doc' && method === 'POST') {
+        return {
+          success: true,
+          filePath: 'stored://firebase-storage/docs/' + Date.now() + '.pdf',
+          message: 'Document uploaded successfully.'
+        };
+      }
+
       if (cleanEndpoint === '/customers' || (cleanEndpoint === '/customers/register' && method === 'POST')) {
         if (method === 'GET') {
           const statusFilter = query.get('status');
@@ -1170,6 +1189,19 @@
           const newId = `CUST-TN-2026-${String(this.data.customers.length + 1).padStart(3, '0')}`;
           const officeId = body.assignedOfficeId || 'OFF001';
           const matchedOffice = (this.data.offices || []).find(o => o.officeId === officeId || o.id === officeId);
+          const nextSlotId = body.fingerprintTemplateId || (this.data.customers.length + 10);
+          const fpRef = body.fingerprintRef || `FP-R307-SLOT${nextSlotId}`;
+
+          const enrichedMembers = (body.familyMembers || []).map((m, idx) => {
+            const bio = body.enrolledBiometrics && body.enrolledBiometrics[m.memberId];
+            return {
+              ...m,
+              enrolled: bio ? true : (m.enrolled || false),
+              fingerprintRef: bio ? bio.templateRef : (m.fingerprintRef || ''),
+              fingerprintTemplateId: bio ? bio.slotId : (m.fingerprintTemplateId || null)
+            };
+          });
+
           const newCust = {
             id: newId,
             customerId: newId,
@@ -1192,9 +1224,9 @@
             existingRationShop: body.existingRationShop || '',
             status: 'PENDING',
             fingerprintStatus: 'Successfully Enrolled',
-            fingerprintRef: body.fingerprintRef || '',
-            fingerprintTemplateId: Math.floor(Math.random() * 200) + 10,
-            familyMembers: body.familyMembers || [],
+            fingerprintRef: fpRef,
+            fingerprintTemplateId: Number(nextSlotId),
+            familyMembers: enrichedMembers,
             documents: body.documents || {},
             createdAt: new Date().toISOString()
           };
@@ -1332,20 +1364,104 @@
 
       // 12. IOT HARDWARE
       if (cleanEndpoint === '/iot/enroll/start') {
+        const nextSlot = Math.max(10, (this.data.customers || []).length + 5);
         return {
           success: true,
           sessionId: 'SESS-' + Date.now(),
-          assignedTemplateId: Math.floor(Math.random() * 200) + 10,
+          assignedTemplateId: nextSlot,
           status: 'READY_FOR_FINGER'
         };
       }
 
-      if (cleanEndpoint === '/iot/verify') {
+      if (cleanEndpoint === '/iot/enroll/step') {
+        const slotId = body.slotId || Math.max(10, (this.data.customers || []).length + 5);
+        const templateRef = body.templateRef || `FP-R307-SLOT${slotId}`;
+        return {
+          success: true,
+          session: {
+            sessionId: body.sessionId || ('SESS-' + Date.now()),
+            slotId: Number(slotId),
+            templateRef,
+            status: 'ENROLLED'
+          }
+        };
+      }
+
+      if (cleanEndpoint === '/iot/verify' || cleanEndpoint === '/iot/login') {
+        const ident = (body.customerIdOrRationCard || '').trim().toUpperCase();
+        const tplRef = (body.templateRef || '').trim();
+        const slotId = body.slotId ? Number(body.slotId) : null;
+
+        let customer = null;
+        let matchedMember = null;
+
+        // 1. Lookup by Customer ID or Ration Card Number
+        if (ident) {
+          customer = (this.data.customers || []).find(c =>
+            (c.customerId || '').toUpperCase() === ident ||
+            (c.rationCardNumber || '').toUpperCase() === ident
+          );
+        }
+
+        // 2. Lookup by Fingerprint Template Ref or R307 Slot ID
+        if (!customer && (tplRef || slotId)) {
+          customer = (this.data.customers || []).find(c => {
+            if (tplRef && c.fingerprintRef === tplRef) return true;
+            if (slotId && Number(c.fingerprintTemplateId) === slotId) return true;
+            if (Array.isArray(c.familyMembers)) {
+              const fm = c.familyMembers.find(m =>
+                (tplRef && m.fingerprintRef === tplRef) ||
+                (slotId && Number(m.fingerprintTemplateId) === slotId)
+              );
+              if (fm) {
+                matchedMember = fm;
+                return true;
+              }
+            }
+            return false;
+          });
+        }
+
+        if (!customer) {
+          throw new Error(ident
+            ? `No beneficiary found matching "${ident}".`
+            : `No enrolled beneficiary found for fingerprint "${tplRef || slotId}". Please register first.`);
+        }
+
+        // For POS ration distribution (/iot/verify), require APPROVED status
+        if (cleanEndpoint === '/iot/verify' && customer.status !== 'APPROVED') {
+          throw new Error(`Beneficiary ${customer.fullName} (${customer.customerId}) is currently ${customer.status}. Admin approval is required before ration distribution.`);
+        }
+
+        if (!matchedMember && Array.isArray(customer.familyMembers) && customer.familyMembers.length > 0) {
+          matchedMember = customer.familyMembers.find(m =>
+            (tplRef && m.fingerprintRef === tplRef) ||
+            (slotId && Number(m.fingerprintTemplateId) === slotId)
+          ) || customer.familyMembers[0];
+        }
+
+        const resolvedRef = tplRef || customer.fingerprintRef || `FP-R307-SLOT${customer.fingerprintTemplateId || 1}`;
+        const verificationRef = `BIO-VERIFIED-R307-${Date.now().toString().slice(-6)}`;
+
         return {
           success: true,
           verified: true,
-          matchedMember: body.authenticatedMemberName || 'Beneficiary Head (Biometric Verified)',
-          confidenceScore: 98.6
+          verificationRef,
+          confidenceScore: 98.6,
+          matchedMember: {
+            name: matchedMember ? (matchedMember.name || matchedMember.fullName) : customer.fullName,
+            relationship: matchedMember ? (matchedMember.relationship || 'Head') : 'Head',
+            templateRef: resolvedRef
+          },
+          customer: {
+            customerId: customer.customerId,
+            fullName: customer.fullName,
+            rationCardNumber: customer.rationCardNumber,
+            category: customer.rationCardCategory || 'PHH',
+            status: customer.status,
+            assignedOfficeId: customer.assignedOfficeId,
+            assignedOfficeName: customer.assignedOfficeName
+          }
         };
       }
 

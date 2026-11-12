@@ -32,16 +32,23 @@
 
   <div style="max-width: 1100px; margin: 36px auto; padding: 0 20px;">
 
-    <!-- Beneficiary Lookup Card (If not logged in) -->
+    <!-- Beneficiary Lookup & Biometric Login Card -->
     <div class="card" id="lookup-card" style="margin-bottom: 28px; border-top: 4px solid var(--green-primary);">
       <h3 style="font-size: 1.15rem; color: var(--navy-primary); margin-bottom: 8px;">Access Your Digital Ration Card</h3>
       <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 16px;">
-        Enter your Customer ID (e.g. <code>CUST-TN-2025-001</code>) or Ration Card Number (e.g. <code>RC-TN-772819</code>):
+        Enter your Customer ID (e.g. <code>CUST-TN-2025-001</code>) or Ration Card Number (e.g. <code>RC-TN-772819</code>), or scan your enrolled fingerprint via ESP32 R307:
       </p>
-      <form id="cust-login-form" style="display: flex; gap: 12px; max-width: 600px;">
-        <input type="text" id="cust-ident-input" class="form-control" placeholder="Customer ID or Ration Card Number" value="CUST-TN-2025-001" required>
+      <form id="cust-login-form" style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center;">
+        <input type="text" id="cust-ident-input" class="form-control" style="max-width: 340px;" placeholder="Customer ID or Ration Card Number" value="CUST-TN-2025-001" required>
         <button type="submit" class="btn btn-success">View My Quota →</button>
+        <button type="button" class="btn btn-primary" style="background-color: var(--navy-primary);" id="btn-cust-fp-login" onclick="triggerCustomerFingerprintLogin()">
+          👆 Scan Fingerprint to Login
+        </button>
+        <button type="button" class="btn btn-outline btn-sm" onclick="connectCustomerESP32USB()">
+          🔌 Connect ESP32 USB
+        </button>
       </form>
+      <div id="cust-fp-status" style="margin-top: 10px; font-size: 0.82rem; color: var(--text-muted); display: none;"></div>
     </div>
 
     <!-- Active Profile & Entitlement View -->
@@ -131,10 +138,81 @@
 
   <script src="js/client-db.js"></script>
   <script src="js/api.js"></script>
+  <script src="js/esp32-connection.js"></script>
   <script>
     const loginForm = document.getElementById('cust-login-form');
     const identInput = document.getElementById('cust-ident-input');
     const profileSection = document.getElementById('customer-profile-section');
+
+    if (window.esp32Bridge) {
+      window.esp32Bridge.onFingerprintMatch(async (matchData) => {
+        if (matchData.success) {
+          await loginWithFingerprintData(matchData.templateRef, matchData.slotId);
+        } else {
+          showToast(matchData.error || 'Fingerprint not recognized on R307 sensor.', 'error');
+        }
+      });
+    }
+
+    async function connectCustomerESP32USB() {
+      try {
+        await window.esp32Bridge.connectUSB();
+        showToast('ESP32 R307 connected! Place your finger on the sensor to log in.', 'success');
+      } catch (err) {
+        showToast(`USB Connect Error: ${err.message}`, 'error');
+      }
+    }
+
+    async function triggerCustomerFingerprintLogin() {
+      const statusEl = document.getElementById('cust-fp-status');
+      const btn = document.getElementById('btn-cust-fp-login');
+      btn.disabled = true;
+      btn.textContent = 'Scanning R307 Sensor...';
+      statusEl.style.display = 'block';
+      statusEl.innerHTML = '<span style="color: var(--blue-primary); font-weight: 600;">👆 Place finger on R307 Optical Sensor...</span>';
+
+      if (window.esp32Bridge && window.esp32Bridge.status === 'CONNECTED' && window.esp32Bridge.mode === 'USB') {
+        await window.esp32Bridge.triggerScanViaUSB();
+        setTimeout(() => {
+          btn.disabled = false;
+          btn.textContent = '👆 Scan Fingerprint to Login';
+        }, 4000);
+        return;
+      }
+
+      // Simulator / Browser fallback using entered ID or saved customer ID
+      await new Promise(r => setTimeout(r, 900));
+      const typedId = identInput.value.trim();
+      await loginWithFingerprintData('', null, typedId);
+      btn.disabled = false;
+      btn.textContent = '👆 Scan Fingerprint to Login';
+    }
+
+    async function loginWithFingerprintData(templateRef, slotId, customerIdOrRationCard = '') {
+      const statusEl = document.getElementById('cust-fp-status');
+      try {
+        const res = await apiRequest('/iot/login', {
+          method: 'POST',
+          body: JSON.stringify({
+            customerIdOrRationCard,
+            templateRef,
+            slotId
+          })
+        });
+        if (res.success && res.customer) {
+          identInput.value = res.customer.customerId;
+          localStorage.setItem('pds_customer_token', res.customer.customerId);
+          statusEl.style.display = 'block';
+          statusEl.innerHTML = `<span style="color: var(--green-primary); font-weight: 600;">✓ Biometric Match Confirmed: ${res.customer.fullName} (${res.matchedMember?.templateRef || 'R307'})</span>`;
+          showToast(`Welcome, ${res.customer.fullName}! Fingerprint login successful.`, 'success');
+          await loadCustomerProfile(res.customer.customerId);
+        }
+      } catch (err) {
+        statusEl.style.display = 'block';
+        statusEl.innerHTML = `<span style="color: var(--red-primary); font-weight: 600;">❌ ${err.message}</span>`;
+        showToast(err.message, 'error');
+      }
+    }
 
     document.addEventListener('DOMContentLoaded', () => {
       const savedId = localStorage.getItem('pds_customer_token') || 'CUST-TN-2025-001';

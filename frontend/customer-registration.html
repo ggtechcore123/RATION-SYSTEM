@@ -286,9 +286,17 @@
             <strong>One-Way Template Hash:</strong> <span id="fp-ref-text"></span>
           </div>
 
-          <!-- ESP32 Terminal Connection Status Pill -->
-          <div style="margin-top: 20px; font-size: 0.78rem; color: var(--text-muted);">
-            <span style="color: var(--green-primary); font-weight: 600;">● ESP32 Hardware Bridge Active</span> (Terminal: <code>DEV-ENROLL-KIOSK-01</code>)
+          <div style="margin-top: 16px;">
+            <button type="button" class="btn btn-success" id="btn-start-enroll-scan" onclick="triggerBiometricScan()">
+              👆 Scan &amp; Enroll Fingerprint (R307)
+            </button>
+          </div>
+
+          <!-- ESP32 Terminal Connection Controls -->
+          <div style="margin-top: 18px; padding-top: 14px; border-top: 1px dashed var(--border-color); display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; align-items: center; font-size: 0.8rem;">
+            <span id="reg-hw-status" style="color: var(--text-muted); font-weight: 600;">● Hardware: Simulator Ready (or Connect ESP32)</span>
+            <button type="button" class="btn btn-outline btn-sm" onclick="connectRegESP32USB()">🔌 Connect ESP32 USB</button>
+            <button type="button" class="btn btn-outline btn-sm" onclick="connectRegESP32IP()">📶 Connect ESP32 WiFi IP</button>
           </div>
         </div>
 
@@ -383,6 +391,7 @@
 
   <script src="js/client-db.js"></script>
   <script src="js/api.js"></script>
+  <script src="js/esp32-connection.js"></script>
   <script src="js/customer-registration.js"></script>
 </body>
 </html>

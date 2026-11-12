@@ -24,6 +24,7 @@ class ESP32HardwareBridge {
     this.onStatusChangeCallbacks = [];
     this.onKeypadInputCallbacks = [];
     this.onFingerprintMatchCallbacks = [];
+    this.onFingerprintEnrollCallbacks = [];
     this.onLogCallbacks = [];
 
     // Load saved preference
@@ -49,6 +50,7 @@ class ESP32HardwareBridge {
   onStatusChange(cb) { this.onStatusChangeCallbacks.push(cb); }
   onKeypadInput(cb) { this.onKeypadInputCallbacks.push(cb); }
   onFingerprintMatch(cb) { this.onFingerprintMatchCallbacks.push(cb); }
+  onFingerprintEnroll(cb) { this.onFingerprintEnrollCallbacks.push(cb); }
   onLog(cb) { this.onLogCallbacks.push(cb); }
 
   emitStatus(status, details = {}) {
@@ -185,6 +187,27 @@ class ESP32HardwareBridge {
         error: 'Fingerprint not recognized on R307 sensor'
       }));
     }
+
+    // Protocol 4: Enrollment Success -> "ENROLL_OK:<slotId>:<templateRef>"
+    else if (line.startsWith('ENROLL_OK:')) {
+      const parts = line.split(':');
+      const slotId = Number(parts[1] || '1');
+      const templateRef = parts[2] || `FP-R307-SLOT${slotId}`;
+      this.onFingerprintEnrollCallbacks.forEach(cb => cb({
+        success: true,
+        slotId,
+        templateRef
+      }));
+    }
+
+    // Protocol 5: Enrollment Error -> "ENROLL_ERR:<reason>"
+    else if (line.startsWith('ENROLL_ERR:')) {
+      const reason = line.substring(11).trim();
+      this.onFingerprintEnrollCallbacks.forEach(cb => cb({
+        success: false,
+        error: reason || 'R307 enrollment failed'
+      }));
+    }
   }
 
   // ==========================================
@@ -288,6 +311,27 @@ class ESP32HardwareBridge {
   async triggerScanViaUSB() {
     if (this.mode !== 'USB' || !this.serialPort) return;
     await this.sendSerialCommand('CMD:SCAN\n');
+  }
+
+  // Trigger R307 enrollment via USB
+  async triggerEnrollViaUSB(sessionId, customerId, memberId = 'head') {
+    if (this.mode !== 'USB' || !this.serialPort) return;
+    await this.sendSerialCommand(`ENROLL:${sessionId}:${customerId}:${memberId}\n`);
+  }
+
+  // Trigger R307 enrollment via WiFi IP
+  async triggerEnrollViaIP() {
+    if (this.mode !== 'IP') return null;
+    try {
+      const res = await fetch(`http://${this.ipAddress}/enroll`, {
+        method: 'POST',
+        mode: 'cors'
+      });
+      return await res.json();
+    } catch (e) {
+      this.log(`Enroll IP fetch error: ${e.message}`);
+      return null;
+    }
   }
 }
 

@@ -227,6 +227,50 @@ function updateBiometricStatusCard() {
   }
 }
 
+// ESP32 Hardware Connection Helpers for Registration Step 4
+let pendingEnrollResolver = null;
+
+if (window.esp32Bridge) {
+  window.esp32Bridge.onStatusChange((status, details) => {
+    const el = document.getElementById('reg-hw-status');
+    if (!el) return;
+    if (status === 'CONNECTED') {
+      el.innerHTML = `<span style="color: var(--green-primary);">● ESP32 R307 Connected (${details.mode})</span>`;
+    } else if (status === 'CONNECTING') {
+      el.innerHTML = `<span style="color: var(--amber-text);">● Connecting ESP32...</span>`;
+    } else {
+      el.innerHTML = `● Hardware: Simulator Ready (or Connect ESP32)`;
+    }
+  });
+
+  window.esp32Bridge.onFingerprintEnroll((res) => {
+    if (pendingEnrollResolver) {
+      pendingEnrollResolver(res);
+      pendingEnrollResolver = null;
+    }
+  });
+}
+
+async function connectRegESP32USB() {
+  try {
+    await window.esp32Bridge.connectUSB();
+    showToast('ESP32 connected via USB! Ready for R307 fingerprint enrollment.', 'success');
+  } catch (err) {
+    showToast(`USB Connect Error: ${err.message}`, 'error');
+  }
+}
+
+async function connectRegESP32IP() {
+  const ip = prompt('Enter ESP32 WiFi IP Address:', localStorage.getItem('pds_esp32_ip') || '192.168.1.150');
+  if (!ip) return;
+  try {
+    await window.esp32Bridge.connectIP(ip);
+    showToast(`ESP32 connected at ${ip}!`, 'success');
+  } catch (err) {
+    showToast(`IP Connect Error: ${err.message}`, 'error');
+  }
+}
+
 // Interactive ESP32 Biometric Scan
 async function triggerBiometricScan() {
   const subjectId = document.getElementById('biometric-member-select').value;
@@ -239,49 +283,80 @@ async function triggerBiometricScan() {
   badge.className = 'badge badge-info';
   badge.textContent = 'SCANNING FINGERPRINT';
   title.textContent = 'Capturing Biometric Ridges...';
-  desc.textContent = 'ESP32 Optical Sensor (R307) LED active. Please do not move finger.';
+  desc.textContent = 'ESP32 Optical Sensor (R307) LED active. Please place finger steady (2 scans required on hardware).';
 
   try {
-    // 1. Start enrollment session on backend
+    const custIdent = document.getElementById('reg-cardNo').value || 'TEMP-CUST';
+    // 1. Start enrollment session on backend / clientDB
     const sessionRes = await apiRequest('/iot/enroll/start', {
       method: 'POST',
       body: JSON.stringify({
-        customerId: document.getElementById('reg-cardNo').value || 'TEMP-CUST',
+        customerId: custIdent,
         memberId: subjectId
       })
     });
 
     const sessionId = sessionRes.sessionId;
+    let hwSlotId = sessionRes.assignedTemplateId || null;
+    let hwTemplateRef = null;
 
-    // Simulate sensor delay for realistic hardware interaction
-    await new Promise(r => setTimeout(r, 1400));
+    // 2. If physical ESP32 is connected via USB or IP, perform real R307 capture
+    if (window.esp32Bridge && window.esp32Bridge.status === 'CONNECTED' && window.esp32Bridge.mode === 'USB') {
+      const enrollPromise = new Promise((resolve, reject) => {
+        pendingEnrollResolver = resolve;
+        setTimeout(() => {
+          if (pendingEnrollResolver) {
+            pendingEnrollResolver = null;
+            reject(new Error('R307 hardware enrollment timed out.'));
+          }
+        }, 25000);
+      });
+      await window.esp32Bridge.triggerEnrollViaUSB(sessionId, custIdent, subjectId);
+      const hwRes = await enrollPromise;
+      if (!hwRes.success) throw new Error(hwRes.error || 'R307 sensor failed to enroll.');
+      hwSlotId = hwRes.slotId;
+      hwTemplateRef = hwRes.templateRef;
+    } else if (window.esp32Bridge && window.esp32Bridge.status === 'CONNECTED' && window.esp32Bridge.mode === 'IP') {
+      const ipRes = await window.esp32Bridge.triggerEnrollViaIP();
+      if (ipRes && ipRes.success) {
+        hwSlotId = ipRes.slotId;
+        hwTemplateRef = ipRes.templateRef;
+      }
+    } else {
+      // Simulator delay for browser-only mode
+      await new Promise(r => setTimeout(r, 1200));
+    }
 
-    // 2. Complete enrollment step
+    // 3. Complete enrollment step
     const stepRes = await apiRequest('/iot/enroll/step', {
       method: 'POST',
       body: JSON.stringify({
         sessionId,
+        slotId: hwSlotId,
+        templateRef: hwTemplateRef,
         status: 'SUCCESS'
       })
     });
 
-    const templateRef = stepRes.session?.templateRef || `FP-REF-${Date.now().toString().slice(-8)}`;
+    const finalSlotId = hwSlotId || stepRes.session?.slotId || Math.floor(Math.random() * 200) + 10;
+    const templateRef = hwTemplateRef || stepRes.session?.templateRef || `FP-R307-SLOT${finalSlotId}`;
 
     enrolledBiometrics[subjectId] = {
+      slotId: finalSlotId,
       templateRef,
       status: 'ENROLLED'
     };
 
     pad.classList.remove('scanning');
     updateBiometricStatusCard();
-    showToast(`Fingerprint enrolled successfully for ${subjectId === 'head' ? 'Family Head' : subjectId}!`, 'success');
+    showToast(`Fingerprint enrolled (${templateRef}) for ${subjectId === 'head' ? 'Family Head' : subjectId}!`, 'success');
   } catch (err) {
     pad.classList.remove('scanning');
     badge.className = 'badge badge-danger';
     badge.textContent = 'FAILED';
     title.textContent = 'Scan Failed or Sensor Timed Out';
     desc.textContent = err.message || 'Please clean sensor glass and try again.';
-    showToast('Biometric enrollment failed. Try again.', 'error');
+    showToast(`Biometric enrollment failed: ${err.message}`, 'error');
   }
 }
 
@@ -316,7 +391,8 @@ async function handleFileUpload(input, docKey) {
 // Final Submission
 async function submitRegistration() {
   const familyMembers = getCollectedFamilyMembers();
-  const headFp = enrolledBiometrics['head']?.templateRef || `FP-REF-HEAD-${Date.now().toString().slice(-6)}`;
+  const headBio = enrolledBiometrics['head'] || {};
+  const headFp = headBio.templateRef || `FP-R307-SLOT${headBio.slotId || Date.now().toString().slice(-3)}`;
 
   const payload = {
     fullName: document.getElementById('reg-fullName').value.trim(),
@@ -338,6 +414,8 @@ async function submitRegistration() {
     existingRationShop: document.getElementById('reg-existingShop').value.trim(),
     familyMembers,
     fingerprintRef: headFp,
+    fingerprintTemplateId: headBio.slotId || null,
+    enrolledBiometrics,
     documents: uploadedDocs
   };
 
