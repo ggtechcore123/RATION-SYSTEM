@@ -235,7 +235,7 @@ if (window.esp32Bridge) {
     const el = document.getElementById('reg-hw-status');
     if (!el) return;
     if (status === 'CONNECTED') {
-      el.innerHTML = `<span style="color: var(--green-primary);">● ESP32 R307 Connected (${details.mode})</span>`;
+      el.innerHTML = `<span style="color: var(--green-primary);">● ESP32 FPM10A Connected (${details.mode})</span>`;
     } else if (status === 'CONNECTING') {
       el.innerHTML = `<span style="color: var(--amber-text);">● Connecting ESP32...</span>`;
     } else {
@@ -254,7 +254,7 @@ if (window.esp32Bridge) {
 async function connectRegESP32USB() {
   try {
     await window.esp32Bridge.connectUSB();
-    showToast('ESP32 connected via USB! Ready for R307 fingerprint enrollment.', 'success');
+    showToast('ESP32 connected via USB! Ready for FPM10A/DY50 fingerprint enrollment.', 'success');
   } catch (err) {
     showToast(`USB Connect Error: ${err.message}`, 'error');
   }
@@ -304,33 +304,36 @@ async function triggerBiometricScan(forceSimulator = false) {
 
     // 2. If physical ESP32 is connected via USB or IP (and not forced simulator), perform real capture
     if (!forceSimulator && window.esp32Bridge && window.esp32Bridge.status === 'CONNECTED' && window.esp32Bridge.mode === 'USB') {
-      // FPM10A/DY50 enrollment: Scan 1 (up to 20s) + 2.5s gap + finger-off wait (8s) + Scan 2 (up to 20s) = ~50s
-      // We give the browser 90 seconds total so the user has plenty of time
+      // FPM10A/DY50 enrollment: Scan 1 (up to 20s) + 1.5s gap + finger-off wait (5s) + Scan 2 (up to 20s)
       const ENROLL_TIMEOUT_MS = 90000;
 
       // Show countdown UI update
       desc.textContent = 'STEP 1 of 2: Place your finger firmly on the FPM10A sensor now...';
 
+      let enrollTimeoutId = null;
+      let midTimerId = null;
+
       const enrollPromise = new Promise((resolve, reject) => {
-        pendingEnrollResolver = resolve;
+        pendingEnrollResolver = (res) => {
+          if (enrollTimeoutId) clearTimeout(enrollTimeoutId);
+          if (midTimerId) clearTimeout(midTimerId);
+          resolve(res);
+        };
+
         // Update UI at midpoint
-        const midTimer = setTimeout(() => {
+        midTimerId = setTimeout(() => {
           if (pendingEnrollResolver) {
             desc.textContent = 'Waiting for 2nd scan... Place same finger on sensor again.';
           }
         }, 25000);
 
-        const timeoutId = setTimeout(() => {
-          clearTimeout(midTimer);
+        enrollTimeoutId = setTimeout(() => {
+          if (midTimerId) clearTimeout(midTimerId);
           if (pendingEnrollResolver) {
             pendingEnrollResolver = null;
             reject(new Error('Timeout on 2nd scan. Check 5V VCC & TXD→GPIO16 wiring.'));
           }
         }, ENROLL_TIMEOUT_MS);
-
-        // Store timeoutId so we can clear it on success
-        enrollPromise._timeoutId = timeoutId;
-        enrollPromise._midTimerId = midTimer;
       });
 
       await window.esp32Bridge.triggerEnrollViaUSB(sessionId, custIdent, subjectId);

@@ -149,7 +149,7 @@
         if (matchData.success) {
           await loginWithFingerprintData(matchData.templateRef, matchData.slotId);
         } else {
-          showToast(matchData.error || 'Fingerprint not recognized on R307 sensor.', 'error');
+          showToast(matchData.error || 'Fingerprint not recognized on FPM10A/DY50 sensor.', 'error');
         }
       });
     }
@@ -157,7 +157,7 @@
     async function connectCustomerESP32USB() {
       try {
         await window.esp32Bridge.connectUSB();
-        showToast('ESP32 R307 connected! Place your finger on the sensor to log in.', 'success');
+        showToast('ESP32 FPM10A connected! Place your finger on the sensor to log in.', 'success');
       } catch (err) {
         showToast(`USB Connect Error: ${err.message}`, 'error');
       }
@@ -167,9 +167,9 @@
       const statusEl = document.getElementById('cust-fp-status');
       const btn = document.getElementById('btn-cust-fp-login');
       btn.disabled = true;
-      btn.textContent = 'Scanning R307 Sensor...';
+      btn.textContent = 'Scanning FPM10A Sensor...';
       statusEl.style.display = 'block';
-      statusEl.innerHTML = '<span style="color: var(--blue-primary); font-weight: 600;">👆 Place finger on R307 Optical Sensor...</span>';
+      statusEl.innerHTML = '<span style="color: var(--blue-primary); font-weight: 600;">👆 Place finger on FPM10A Optical Sensor...</span>';
 
       if (window.esp32Bridge && window.esp32Bridge.status === 'CONNECTED' && window.esp32Bridge.mode === 'USB') {
         await window.esp32Bridge.triggerScanViaUSB();

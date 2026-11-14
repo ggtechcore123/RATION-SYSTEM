@@ -1,36 +1,28 @@
-# R307 Optical Fingerprint Sensor & ESP32 Hardware Wiring Guide
+# FPM10A / DY50 & R307 Optical Fingerprint Sensor & ESP32 Hardware Wiring Guide
 
-## 1. R307 Optical Fingerprint Sensor Specifications
+## 1. FPM10A / DY50 & R307 Specifications
 
-| Parameter | Value |
-|---|---|
-| **Sensor Model** | **R307 Optical Fingerprint Module** |
-| **Operating Voltage** | **DC 4.2V - 6.0V** (Recommended: 5V steady supply) |
-| **Operating Current** | Peak: 140mA, Typical: 50mA |
-| **Interface** | Standard UART TTL (Logic level: 3.3V / 5V) |
-| **Default Baud Rate** | **57600 bps** (8 data bits, 1 stop bit, no parity) |
-| **Template Capacity** | **1,000 Fingerprint Templates** (Flash ID #1 to #1000) |
-| **Security Level** | 1 to 5 (Default: 3) |
-| **Template Size** | 512 Bytes per fingerprint |
-| **Window Dimensions** | 19mm × 21mm (Blue / Red LED backlight prism) |
-| **Resolution** | 500 DPI |
-| **False Acceptance Rate (FAR)** | < 0.001% |
-| **False Rejection Rate (FRR)** | < 0.1% |
+| Parameter | FPM10A (DY50) | R307 |
+|---|---|---|
+| **Operating Voltage** | **DC 4.2V - 6.0V** (Recommended: 5V) | **DC 4.2V - 6.0V** (Recommended: 5V) |
+| **Operating Current** | Peak: 120mA, Typical: 45mA | Peak: 140mA, Typical: 50mA |
+| **Interface** | Standard UART TTL (3.3V / 5V tolerant) | Standard UART TTL |
+| **Baud Rate** | **57600 bps** (auto-detected in firmware) | **57600 bps** |
+| **Template Capacity** | **150 - 162 Templates** | **1,000 Templates** |
+| **Resolution** | 500 DPI | 500 DPI |
 
 ---
 
-## 2. R307 6-Pin Wire Pinout Table
+## 2. FPM10A / DY50 Pinout Table
 
-The R307 sensor comes with a 6-pin JST color-coded cable:
+The FPM10A / DY50 typically has a 4-pin or 6-pin connector:
 
-| Pin # | Wire Color | Signal Name | ESP32 Connection | Description & Voltage |
+| Pin # | Wire Color | Signal | ESP32 Pin | Description |
 |:---:|:---:|:---:|:---:|---|
-| **1** | **RED** | **VCC** | **ESP32 5V / VIN** | **Power Supply (5.0V)**. *Do NOT power R307 with 3.3V pin; sensor optical LED requires 4.5V-6V.* |
+| **1** | **RED** | **VCC** | **ESP32 5V / VIN** | **Power Supply (5.0V)**. *Must connect to 5V/VIN!* |
 | **2** | **BLACK** | **GND** | **ESP32 GND** | Common Ground |
-| **3** | **YELLOW** | **TXD** | **ESP32 GPIO 16 (RX2)** | Serial Data Output from sensor into ESP32 Hardware UART2 RX |
-| **4** | **WHITE** | **RXD** | **ESP32 GPIO 17 (TX2)** | Serial Data Input into sensor from ESP32 Hardware UART2 TX |
-| **5** | **BLUE** | **TOUCH OUT** | **ESP32 GPIO 34** *(Optional)* | Touch induction signal. Goes HIGH (3.3V) when finger is placed. |
-| **6** | **GREEN** | **TOUCH VCC** | **ESP32 3.3V** *(Optional)* | Power for touch induction circuit. Leave unconnected if polling via software. |
+| **3** | **YELLOW / GREEN** | **TXD** | **ESP32 GPIO 16 (RX2)** | Serial Data Output from sensor into ESP32 RX2 |
+| **4** | **WHITE / BLUE** | **RXD** | **ESP32 GPIO 17 (TX2)** | Serial Data Input into sensor from ESP32 TX2 |
 
 > **IMPORTANT VOLTAGE NOTE:**
 > Connect the **RED wire** to the **5V / VIN pin** of the ESP32 (powered via USB 5V). Powering the R307 from a 3.3V pin will cause communication or imaging failures.
