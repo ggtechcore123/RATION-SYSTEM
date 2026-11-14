@@ -196,75 +196,125 @@ int scanFingerprint() {
 // ============================================================
 bool enrollFingerprint(int slot) {
   Serial.printf("[FPM10A] Starting enrollment into slot %d\n", slot);
+  Serial.println("ENROLL_STATUS:STARTING");
   lcdPrint("Place Finger", "Scan 1 of 2...");
 
-  // === SCAN 1 ===
+  // =========================================================
+  // SCAN 1: Wait up to 20 seconds for 1st fingerprint
+  // =========================================================
+  Serial.println("ENROLL_STATUS:WAITING_SCAN1");
   unsigned long t = millis();
-  while (millis() - t < 20000) {   // 20-second timeout
-    int r = finger.getImage();
-    if (r == FINGERPRINT_OK) break;
-    if (r == FINGERPRINT_NOFINGER) { delay(100); continue; }
-    Serial.printf("ENROLL_ERR:Image1 error (%d)\n", r);
-    return false;
-  }
-  if (millis() - t >= 20000) {
-    Serial.println("ENROLL_ERR:Timeout on 1st scan. Check 5V VCC & TXD→GPIO16 wiring.");
+  int r1 = FINGERPRINT_NOFINGER;
+  while (millis() - t < 20000) {
+    r1 = finger.getImage();
+    if (r1 == FINGERPRINT_OK) {
+      Serial.println("ENROLL_STATUS:SCAN1_OK");
+      break;
+    }
+    if (r1 == FINGERPRINT_NOFINGER) {
+      delay(100);
+      continue;
+    }
+    // Other error
+    Serial.printf("ENROLL_ERR:Scan 1 image error (code %d). Re-seat finger on center of sensor.\n", r1);
     return false;
   }
 
-  if (finger.image2Tz(1) != FINGERPRINT_OK) {
-    Serial.println("ENROLL_ERR:Failed to convert 1st fingerprint image.");
+  if (r1 != FINGERPRINT_OK) {
+    Serial.println("ENROLL_ERR:Timeout on 1st scan. Place finger firmly on center of sensor within 20 seconds.");
+    lcdPrint("Scan 1 Timeout", "Try Again");
     return false;
   }
 
-  lcdPrint("Remove Finger", "...");
-  Serial.println("[FPM10A] 1st scan OK. Remove finger...");
-  delay(2500);  // DY50 needs longer gap between scans
+  // Convert scan 1 image to template buffer 1
+  int conv1 = finger.image2Tz(1);
+  if (conv1 != FINGERPRINT_OK) {
+    Serial.printf("ENROLL_ERR:Scan 1 conversion failed (code %d). Keep finger flat & steady.\n", conv1);
+    return false;
+  }
+  Serial.println("ENROLL_STATUS:SCAN1_CONVERTED");
+  lcdPrint("Scan 1 OK!", "Remove Finger");
+  Serial.println("[FPM10A] Scan 1 captured OK. Remove finger...");
 
-  // Wait for finger removal
-  t = millis();
-  while (millis() - t < 8000) {
+  // =========================================================
+  // WAIT FOR FINGER REMOVAL (up to 5 seconds)
+  // =========================================================
+  delay(500);
+  unsigned long removeStart = millis();
+  while (millis() - removeStart < 5000) {
     if (finger.getImage() == FINGERPRINT_NOFINGER) break;
     delay(200);
   }
+  Serial.println("ENROLL_STATUS:FINGER_REMOVED");
+  Serial.println("[FPM10A] Finger removed. Waiting 1.5s before 2nd scan...");
+  delay(1500); // 1.5s clear gap — DY50 needs time to reset between captures
 
-  // === SCAN 2 ===
+  // =========================================================
+  // SCAN 2: Wait up to 20 seconds for 2nd fingerprint
+  // =========================================================
   lcdPrint("Place Finger", "Scan 2 of 2...");
-  Serial.println("[FPM10A] Place same finger again (2nd scan)...");
+  Serial.println("ENROLL_STATUS:WAITING_SCAN2");
+  Serial.println("[FPM10A] Ready for 2nd scan. Place same finger again...");
 
-  t = millis();
-  while (millis() - t < 20000) {   // 20-second timeout for 2nd scan
-    int r = finger.getImage();
-    if (r == FINGERPRINT_OK) break;
-    if (r == FINGERPRINT_NOFINGER) { delay(100); continue; }
-    Serial.printf("ENROLL_ERR:Image2 error (%d)\n", r);
-    return false;
-  }
-  if (millis() - t >= 20000) {
-    Serial.println("ENROLL_ERR:Timeout on 2nd scan. Check 5V VCC & TXD→GPIO16 wiring.");
-    return false;
-  }
-
-  if (finger.image2Tz(2) != FINGERPRINT_OK) {
-    Serial.println("ENROLL_ERR:Failed to convert 2nd fingerprint image.");
-    return false;
-  }
-
-  // Create model from both scans
-  if (finger.createModel() != FINGERPRINT_OK) {
-    Serial.println("ENROLL_ERR:Fingerprints did not match. Please try again.");
+  unsigned long t2 = millis();
+  int r2 = FINGERPRINT_NOFINGER;
+  while (millis() - t2 < 20000) {
+    r2 = finger.getImage();
+    if (r2 == FINGERPRINT_OK) {
+      Serial.println("ENROLL_STATUS:SCAN2_OK");
+      break;
+    }
+    if (r2 == FINGERPRINT_NOFINGER) {
+      delay(100);
+      continue;
+    }
+    Serial.printf("ENROLL_ERR:Scan 2 image error (code %d). Re-seat finger on sensor.\n", r2);
     return false;
   }
 
-  // Store model in sensor
-  if (finger.storeModel(slot) != FINGERPRINT_OK) {
-    Serial.printf("ENROLL_ERR:Failed to store template in slot %d.\n", slot);
+  if (r2 != FINGERPRINT_OK) {
+    Serial.println("ENROLL_ERR:Timeout on 2nd scan. Place same finger within 20 seconds of removing.");
+    lcdPrint("Scan 2 Timeout", "Try Again");
     return false;
   }
 
+  // Convert scan 2 image to template buffer 2
+  int conv2 = finger.image2Tz(2);
+  if (conv2 != FINGERPRINT_OK) {
+    Serial.printf("ENROLL_ERR:Scan 2 conversion failed (code %d). Same finger must be used for both scans.\n", conv2);
+    return false;
+  }
+  Serial.println("ENROLL_STATUS:SCAN2_CONVERTED");
+
+  // =========================================================
+  // CREATE MODEL FROM BOTH BUFFERS
+  // =========================================================
+  Serial.println("[FPM10A] Creating model from both scans...");
+  int modelResult = finger.createModel();
+  if (modelResult == FINGERPRINT_ENROLLMISMATCH) {
+    Serial.println("ENROLL_ERR:Fingerprints did not match (different fingers used). Use the SAME finger for both scans.");
+    lcdPrint("Mismatch!", "Use Same Finger");
+    return false;
+  }
+  if (modelResult != FINGERPRINT_OK) {
+    Serial.printf("ENROLL_ERR:Model creation failed (code %d). Try again.\n", modelResult);
+    return false;
+  }
+
+  // =========================================================
+  // STORE MODEL IN SENSOR FLASH
+  // =========================================================
+  int storeResult = finger.storeModel(slot);
+  if (storeResult != FINGERPRINT_OK) {
+    Serial.printf("ENROLL_ERR:Failed to store template in slot %d (code %d).\n", slot, storeResult);
+    return false;
+  }
+
+  // SUCCESS
   String tplRef = "FP-DY50-SLOT" + String(slot);
   lcdPrint("Enrolled!", tplRef.c_str());
   Serial.printf("ENROLL_OK:%d:%s\n", slot, tplRef.c_str());
+  Serial.printf("[FPM10A] ✓ Enrollment complete! Slot %d, Template: %s\n", slot, tplRef.c_str());
   return true;
 }
 

@@ -215,6 +215,34 @@ class ESP32HardwareBridge {
         error: reason || 'FPM10A/DY50 enrollment failed'
       }));
     }
+
+    // Protocol 6: Enrollment progress status -> "ENROLL_STATUS:<status>"
+    else if (line.startsWith('ENROLL_STATUS:')) {
+      const status = line.substring(14).trim();
+      const statusMessages = {
+        'STARTING':         '⏳ Starting enrollment...',
+        'WAITING_SCAN1':    '👆 STEP 1: Place finger on sensor now...',
+        'SCAN1_OK':         '✅ Scan 1 captured! Remove your finger.',
+        'SCAN1_CONVERTED':  '✅ Scan 1 processed. Remove finger.',
+        'FINGER_REMOVED':   '⏳ Finger removed. Wait 1.5s then place again...',
+        'WAITING_SCAN2':    '👆 STEP 2: Place SAME finger on sensor again...',
+        'SCAN2_OK':         '✅ Scan 2 captured! Processing...',
+        'SCAN2_CONVERTED':  '✅ Both scans done. Creating template...'
+      };
+      this.log(`Enroll progress: ${statusMessages[status] || status}`);
+      // Update UI progress text if element exists
+      const descEl = document.getElementById('fp-status-desc');
+      if (descEl && statusMessages[status]) {
+        descEl.textContent = statusMessages[status];
+      }
+      const titleEl = document.getElementById('fp-status-title');
+      if (titleEl) {
+        if (status === 'WAITING_SCAN1') titleEl.textContent = 'Place Finger for Scan 1...';
+        else if (status === 'SCAN1_OK' || status === 'FINGER_REMOVED') titleEl.textContent = 'Scan 1 Done — Remove Finger';
+        else if (status === 'WAITING_SCAN2') titleEl.textContent = 'Place Finger for Scan 2...';
+        else if (status === 'SCAN2_OK') titleEl.textContent = 'Processing Fingerprint...';
+      }
+    }
   }
 
   // ==========================================

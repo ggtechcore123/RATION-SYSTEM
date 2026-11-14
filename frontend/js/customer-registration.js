@@ -284,8 +284,8 @@ async function triggerBiometricScan(forceSimulator = false) {
   badge.textContent = 'SCANNING FINGERPRINT';
   title.textContent = 'Capturing Biometric Ridges...';
   desc.textContent = forceSimulator
-    ? 'Using Virtual R307 Biometric Capture...'
-    : 'ESP32 Optical Sensor (R307) LED active. Please place finger steady (2 scans required on hardware).';
+    ? 'Using Virtual FPM10A/DY50 Biometric Capture...'
+    : 'ESP32 FPM10A/DY50 Sensor active. STEP 1: Place finger on sensor. Wait for beep/LED, then remove. STEP 2: Place same finger again.';
 
   try {
     const custIdent = document.getElementById('reg-cardNo').value || 'TEMP-CUST';
@@ -302,23 +302,44 @@ async function triggerBiometricScan(forceSimulator = false) {
     let hwSlotId = sessionRes.assignedTemplateId || null;
     let hwTemplateRef = null;
 
-    // 2. If physical ESP32 is connected via USB or IP (and not forced simulator), perform real R307 capture
+    // 2. If physical ESP32 is connected via USB or IP (and not forced simulator), perform real capture
     if (!forceSimulator && window.esp32Bridge && window.esp32Bridge.status === 'CONNECTED' && window.esp32Bridge.mode === 'USB') {
+      // FPM10A/DY50 enrollment: Scan 1 (up to 20s) + 2.5s gap + finger-off wait (8s) + Scan 2 (up to 20s) = ~50s
+      // We give the browser 90 seconds total so the user has plenty of time
+      const ENROLL_TIMEOUT_MS = 90000;
+
+      // Show countdown UI update
+      desc.textContent = 'STEP 1 of 2: Place your finger firmly on the FPM10A sensor now...';
+
       const enrollPromise = new Promise((resolve, reject) => {
         pendingEnrollResolver = resolve;
-        setTimeout(() => {
+        // Update UI at midpoint
+        const midTimer = setTimeout(() => {
           if (pendingEnrollResolver) {
-            pendingEnrollResolver = null;
-            reject(new Error('R307 hardware enrollment timed out.'));
+            desc.textContent = 'Waiting for 2nd scan... Place same finger on sensor again.';
           }
         }, 25000);
+
+        const timeoutId = setTimeout(() => {
+          clearTimeout(midTimer);
+          if (pendingEnrollResolver) {
+            pendingEnrollResolver = null;
+            reject(new Error('Timeout on 2nd scan. Check 5V VCC & TXD→GPIO16 wiring.'));
+          }
+        }, ENROLL_TIMEOUT_MS);
+
+        // Store timeoutId so we can clear it on success
+        enrollPromise._timeoutId = timeoutId;
+        enrollPromise._midTimerId = midTimer;
       });
+
       await window.esp32Bridge.triggerEnrollViaUSB(sessionId, custIdent, subjectId);
       const hwRes = await enrollPromise;
-      if (!hwRes.success) throw new Error(hwRes.error || 'R307 sensor failed to enroll.');
+      if (!hwRes.success) throw new Error(hwRes.error || 'FPM10A/DY50 sensor failed to enroll.');
       hwSlotId = hwRes.slotId;
       hwTemplateRef = hwRes.templateRef;
     } else if (!forceSimulator && window.esp32Bridge && window.esp32Bridge.status === 'CONNECTED' && window.esp32Bridge.mode === 'IP') {
+      desc.textContent = 'Sending enrollment command via WiFi IP...';
       const ipRes = await window.esp32Bridge.triggerEnrollViaIP();
       if (ipRes && ipRes.success) {
         hwSlotId = ipRes.slotId;
@@ -326,7 +347,8 @@ async function triggerBiometricScan(forceSimulator = false) {
       }
     } else {
       // Simulator delay for browser-only mode
-      await new Promise(r => setTimeout(r, 1000));
+      desc.textContent = 'Simulating fingerprint capture...';
+      await new Promise(r => setTimeout(r, 1200));
     }
 
     // 3. Complete enrollment step
@@ -340,8 +362,8 @@ async function triggerBiometricScan(forceSimulator = false) {
       })
     });
 
-    const finalSlotId = hwSlotId || stepRes.session?.slotId || Math.floor(Math.random() * 200) + 10;
-    const templateRef = hwTemplateRef || stepRes.session?.templateRef || `FP-R307-SLOT${finalSlotId}`;
+    const finalSlotId = hwSlotId || stepRes.session?.slotId || Math.floor(Math.random() * 150) + 10;
+    const templateRef = hwTemplateRef || stepRes.session?.templateRef || `FP-DY50-SLOT${finalSlotId}`;
 
     enrolledBiometrics[subjectId] = {
       slotId: finalSlotId,
@@ -351,13 +373,13 @@ async function triggerBiometricScan(forceSimulator = false) {
 
     pad.classList.remove('scanning');
     updateBiometricStatusCard();
-    showToast(`Fingerprint enrolled (${templateRef}) for ${subjectId === 'head' ? 'Family Head' : subjectId}!`, 'success');
+    showToast(`✅ Fingerprint enrolled (${templateRef}) for ${subjectId === 'head' ? 'Family Head' : subjectId}!`, 'success');
   } catch (err) {
     pad.classList.remove('scanning');
     badge.className = 'badge badge-danger';
     badge.textContent = 'HARDWARE SENSOR ERROR';
     title.textContent = 'FPM10A/DY50 Sensor Not Detected / Timed Out';
-    desc.innerHTML = `${err.message}. Check 5V VCC, TXD→GPIO16, RXD→GPIO17, or <a href="javascript:void(0)" onclick="triggerBiometricScan(true)" style="color: var(--blue-primary); font-weight: 700; text-decoration: underline;">click here to enroll via Software Simulator</a>.`;
+    desc.innerHTML = `${err.message} &mdash; Check 5V VCC, TXD&rarr;GPIO16, RXD&rarr;GPIO17, or <a href="javascript:void(0)" onclick="triggerBiometricScan(true)" style="color: var(--blue-primary); font-weight: 700; text-decoration: underline;">click here to enroll via Software Simulator</a>.`;
     showToast(`Biometric enrollment failed: ${err.message}`, 'error');
   }
 }
