@@ -15,7 +15,7 @@
   }
 }(typeof self !== 'undefined' ? self : this, function () {
 
-  const STORAGE_KEY = 'pds_client_db_v3';
+  const STORAGE_KEY = 'pds_client_db_v4';
 
   // Initial Pre-Seeded Datasets
   const INITIAL_DATA = {
@@ -1198,7 +1198,7 @@
           const officeId = body.assignedOfficeId || 'OFF001';
           const matchedOffice = (this.data.offices || []).find(o => o.officeId === officeId || o.id === officeId);
           const nextSlotId = body.fingerprintTemplateId || (this.data.customers.length + 10);
-          const fpRef = body.fingerprintRef || `FP-R307-SLOT${nextSlotId}`;
+          const fpRef = body.fingerprintRef || `FP-DY50-SLOT${nextSlotId}`;
 
           const enrichedMembers = (body.familyMembers || []).map((m, idx) => {
             const bio = body.enrolledBiometrics && body.enrolledBiometrics[m.memberId];
@@ -1387,7 +1387,7 @@
 
       if (cleanEndpoint === '/iot/enroll/step') {
         const slotId = body.slotId || Math.max(10, (this.data.customers || []).length + 5);
-        const templateRef = body.templateRef || `FP-R307-SLOT${slotId}`;
+        const templateRef = body.templateRef || `FP-DY50-SLOT${slotId}`;
         return {
           success: true,
           session: {
@@ -1454,8 +1454,8 @@
           ) || customer.familyMembers[0];
         }
 
-        const resolvedRef = tplRef || customer.fingerprintRef || `FP-R307-SLOT${customer.fingerprintTemplateId || 1}`;
-        const verificationRef = `BIO-VERIFIED-R307-${Date.now().toString().slice(-6)}`;
+        const resolvedRef = tplRef || customer.fingerprintRef || `FP-DY50-SLOT${customer.fingerprintTemplateId || 1}`;
+        const verificationRef = `BIO-VERIFIED-DY50-${Date.now().toString().slice(-6)}`;
 
         return {
           success: true,

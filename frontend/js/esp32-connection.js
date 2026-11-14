@@ -168,11 +168,11 @@ class ESP32HardwareBridge {
       this.onKeypadInputCallbacks.forEach(cb => cb(keyChar));
     }
 
-    // Protocol 2: R307 Fingerprint Match -> "R307_MATCH:<slotId>:<templateRef>"
-    else if (line.startsWith('R307_MATCH:')) {
+    // Protocol 2: Fingerprint Match -> "FPM10A_MATCH:<slot>:<ref>" or legacy "R307_MATCH:<slot>:<ref>"
+    else if (line.startsWith('FPM10A_MATCH:') || line.startsWith('R307_MATCH:')) {
       const parts = line.split(':');
       const slotId = parts[1] || '1';
-      const templateRef = parts[2] || `FP-R307-SLOT${slotId}`;
+      const templateRef = parts[2] || `FP-DY50-SLOT${slotId}`;
       this.onFingerprintMatchCallbacks.forEach(cb => cb({
         success: true,
         slotId,
@@ -180,19 +180,26 @@ class ESP32HardwareBridge {
       }));
     }
 
-    // Protocol 3: Fingerprint No Match / Error
-    else if (line.startsWith('R307_NO_MATCH')) {
+    // Protocol 3: Fingerprint No Match
+    else if (line.startsWith('FPM10A_NO_MATCH') || line.startsWith('R307_NO_MATCH')) {
       this.onFingerprintMatchCallbacks.forEach(cb => cb({
         success: false,
-        error: 'Fingerprint not recognized on R307 sensor'
+        error: 'Fingerprint not recognized on FPM10A/DY50 sensor'
       }));
+    }
+
+    // Protocol 3b: Sensor Ready status
+    else if (line.startsWith('FPM10A_READY:') || line.startsWith('R307_READY:')) {
+      const capacity = parseInt(line.split(':')[1] || '162');
+      this.log(`FPM10A/DY50 sensor ready. Capacity: ${capacity} templates.`);
+      this.emitStatus('CONNECTED', { mode: this.mode, sensor: 'FPM10A DY50', capacity });
     }
 
     // Protocol 4: Enrollment Success -> "ENROLL_OK:<slotId>:<templateRef>"
     else if (line.startsWith('ENROLL_OK:')) {
       const parts = line.split(':');
       const slotId = Number(parts[1] || '1');
-      const templateRef = parts[2] || `FP-R307-SLOT${slotId}`;
+      const templateRef = parts[2] || `FP-DY50-SLOT${slotId}`;
       this.onFingerprintEnrollCallbacks.forEach(cb => cb({
         success: true,
         slotId,
@@ -205,7 +212,7 @@ class ESP32HardwareBridge {
       const reason = line.substring(11).trim();
       this.onFingerprintEnrollCallbacks.forEach(cb => cb({
         success: false,
-        error: reason || 'R307 enrollment failed'
+        error: reason || 'FPM10A/DY50 enrollment failed'
       }));
     }
   }

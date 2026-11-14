@@ -1,594 +1,573 @@
-/*
- * =========================================================================================
+/**
  * Smart Indian Public Distribution System (PDS)
- * UNIFIED SINGLE-FILE ESP32 FIRMWARE
- * =========================================================================================
- * Combines:
- *   1. R307 Optical Fingerprint Enrollment (2-step capture & flash storage)
- *   2. R307 Optical Fingerprint Authentication (Fast 1:N search)
- *   3. 4x4 Matrix Keypad Input (Beneficiary ID entry & mode control)
- *   4. 16x2 I2C LCD Status Display + Green/Red LEDs + Active Buzzer
- *   5. Dual Connectivity:
- *      - Direct USB Cable (Web Serial API @ 115200 baud - works with GitHub Pages & Local)
- *      - WiFi Network IP HTTP Server (Port 80 with CORS: /status, /poll, /scan, /enroll)
+ * ESP32 Unified Firmware v3.0
+ * Sensor: FPM10A / DY50 Optical Fingerprint Sensor
+ * Library: Adafruit Fingerprint Sensor Library (same as R307)
  *
- * Required Arduino Libraries (Install via Library Manager):
+ * Features:
+ *  - FPM10A/DY50 fingerprint enrollment & authentication
+ *  - Baud-rate auto-detection (tries 57600 → 9600 → 19200 → 38400 → 115200)
+ *  - USB Web Serial (115200 baud) for browser communication
+ *  - WiFi HTTP REST server for IP-based connection
+ *  - 4x4 Matrix Keypad (supports 0-9, A, B, C, D, *, #)
+ *  - 16x2 I2C LCD display
+ *
+ * WIRING (FPM10A / DY50):
+ *   VCC  → 5V  (MUST be 5V, not 3.3V)
+ *   GND  → GND
+ *   TXD  → GPIO16 (ESP32 RX2)
+ *   RXD  → GPIO17 (ESP32 TX2)
+ *
+ * USB Serial Protocol (115200 baud):
+ *   Browser → ESP32:  CMD:SCAN, CMD:STATUS, ENROLL:<sessionId>:<customerId>:<memberId>
+ *   ESP32 → Browser:  FPM10A_READY:<slotCount>, R307_READY:<slotCount> (alias)
+ *                     FPM10A_MATCH:<slotId>:<templateRef>, R307_MATCH:<slotId>:<templateRef> (alias)
+ *                     FPM10A_NO_MATCH, R307_NO_MATCH (alias)
+ *                     ENROLL_OK:<slotId>:<templateRef>
+ *                     ENROLL_ERR:<reason>
+ *                     KEY:<char>
+ *
+ * Required Libraries (install via Arduino Library Manager):
  *   - Adafruit Fingerprint Sensor Library (by Adafruit)
- *   - Keypad (by Mark Stanley, Alexander Brevig)
- *   - LiquidCrystal I2C (by Frank de Brabander)
- *   - ArduinoJson (by Benoit Blanchon, v6 or v7)
- *
- * Pin Connections (ESP32 DevKit V1):
- *   - R307 VCC (Red)     -> 5V / VIN (Must be 5V, NOT 3.3V)
- *   - R307 GND (Black)   -> GND
- *   - R307 TXD (Yellow)  -> GPIO 16 (Serial2 RX)
- *   - R307 RXD (White)   -> GPIO 17 (Serial2 TX)
- *   - Keypad Rows        -> GPIO 13, 12, 14, 27
- *   - Keypad Cols        -> GPIO 26, 25, 33, 32
- *   - I2C LCD (0x27)     -> SDA: GPIO 21, SCL: GPIO 22, VCC: 5V, GND: GND
- *   - Green LED          -> GPIO 2
- *   - Red LED            -> GPIO 4
- *   - Active Buzzer      -> GPIO 5
- * =========================================================================================
+ *   - LiquidCrystal_I2C (by Frank de Brabander)
+ *   - WiFi (built-in with ESP32 Arduino core)
  */
 
+#include <Arduino.h>
+#include <Adafruit_Fingerprint.h>
+#include <HardwareSerial.h>
 #include <WiFi.h>
 #include <WebServer.h>
-#include <HTTPClient.h>
-#include <Keypad.h>
-#include <Adafruit_Fingerprint.h>
 #include <Wire.h>
 #include <LiquidCrystal_I2C.h>
-#include <ArduinoJson.h>
 
-// ==================== USER CONFIGURATION ====================
+// ============================================================
+// CONFIGURATION - Edit these values
+// ============================================================
+
+// WiFi credentials (optional - for IP mode)
 const char* WIFI_SSID     = "YOUR_WIFI_SSID";
 const char* WIFI_PASSWORD = "YOUR_WIFI_PASSWORD";
 
-const char* OFFICE_ID     = "OFF001";
-const char* DEVICE_TOKEN  = "DEV-OFF001-ESP32-SECURE";
-// Optional local Node.js backend URL (leave as-is if using USB Web Serial / GitHub Pages)
-const char* BACKEND_URL   = "http://192.168.1.100:5000/api/iot";
+// FPM10A / DY50 Sensor UART Pins
+#define FP_RX_PIN  16   // GPIO16 → Sensor TXD (Yellow wire)
+#define FP_TX_PIN  17   // GPIO17 → Sensor RXD (White wire)
+
+// 4x4 Matrix Keypad Pins
+const int ROW_PINS[4] = {13, 12, 14, 27};  // R1, R2, R3, R4
+const int COL_PINS[4] = {26, 25, 33, 32};  // C1, C2, C3, C4
+
+// I2C LCD (optional) - set address to 0x27 or 0x3F
+LiquidCrystal_I2C lcd(0x27, 16, 2);
+bool lcdAvailable = false;
+
 // ============================================================
+// FINGERPRINT SENSOR SETUP
+// ============================================================
+HardwareSerial fpSerial(2);  // UART2 → GPIO16/17
+Adafruit_Fingerprint finger = Adafruit_Fingerprint(&fpSerial);
 
-// Hardware Pins
-#define R307_RX_PIN 16
-#define R307_TX_PIN 17
-const int LED_GREEN = 2;
-const int LED_RED   = 4;
-const int BUZZER    = 5;
+// Baud rates to try for auto-detection (DY50 often 57600 or 9600)
+const uint32_t BAUD_CANDIDATES[] = {57600, 9600, 19200, 38400, 115200};
+const int      BAUD_COUNT        = 5;
 
-// 4x4 Matrix Keypad Setup
-const byte ROWS = 4;
-const byte COLS = 4;
-char keys[ROWS][COLS] = {
+bool   sensorReady   = false;
+int    sensorCapacity = 162; // FPM10A DY50 default capacity
+uint32_t activeBaud  = 57600;
+
+// ============================================================
+// KEYPAD
+// ============================================================
+const char KEY_MAP[4][4] = {
   {'1','2','3','A'},
   {'4','5','6','B'},
   {'7','8','9','C'},
   {'*','0','#','D'}
 };
-byte rowPins[ROWS] = {13, 12, 14, 27};
-byte colPins[COLS] = {26, 25, 33, 32};
-Keypad keypad = Keypad(makeKeymap(keys), rowPins, colPins, ROWS, COLS);
-
-// R307 Optical Sensor & LCD & HTTP Server
-HardwareSerial r307Serial(2);
-Adafruit_Fingerprint finger = Adafruit_Fingerprint(&r307Serial);
-LiquidCrystal_I2C lcd(0x27, 16, 2);
-WebServer ipServer(80);
-
-// State Management
-enum DeviceMode {
-  MODE_IDLE_AUTH,      // Default: listen for keypad ID & R307 authentication
-  MODE_SCANNING_AUTH,  // Waiting for finger on R307 to authenticate
-  MODE_ENROLLING       // Enrolling new finger into R307 flash slot
-};
-DeviceMode currentMode = MODE_IDLE_AUTH;
 
 String keypadBuffer = "";
-bool sensorReady = false;
+unsigned long lastKeyTime = 0;
 
-// Event queue for WiFi IP /poll endpoint
-String pendingEventType = "NONE";
-String pendingEventKey  = "";
-int    pendingSlotId    = -1;
-String pendingTemplateRef = "";
+// ============================================================
+// WEB SERVER
+// ============================================================
+WebServer server(80);
+bool wifiConnected = false;
 
-// ==================== HELPER FUNCTIONS ====================
+// Enroll session state
+struct EnrollSession {
+  bool      active;
+  String    sessionId;
+  String    customerId;
+  String    memberId;
+  int       targetSlot;
+};
+EnrollSession enrollSession = {false, "", "", "", -1};
 
-void beep(int durationMs, int count = 1) {
-  for (int i = 0; i < count; i++) {
-    digitalWrite(BUZZER, HIGH);
-    delay(durationMs);
-    digitalWrite(BUZZER, LOW);
-    if (i < count - 1) delay(80);
-  }
-}
-
-void showLCD(const String& line1, const String& line2 = "") {
+// ============================================================
+// HELPER: LCD display
+// ============================================================
+void lcdPrint(const char* line1, const char* line2 = "") {
+  if (!lcdAvailable) return;
   lcd.clear();
   lcd.setCursor(0, 0);
-  lcd.print(line1.substring(0, 16));
-  if (line2.length() > 0) {
+  lcd.print(line1);
+  if (strlen(line2) > 0) {
     lcd.setCursor(0, 1);
-    lcd.print(line2.substring(0, 16));
+    lcd.print(line2);
   }
 }
 
-void signalSuccess(const String& l1, const String& l2) {
-  digitalWrite(LED_GREEN, HIGH);
-  digitalWrite(LED_RED, LOW);
-  showLCD(l1, l2);
-  beep(150, 1);
-  delay(1500);
-  digitalWrite(LED_GREEN, LOW);
-}
-
-void signalError(const String& l1, const String& l2) {
-  digitalWrite(LED_RED, HIGH);
-  digitalWrite(LED_GREEN, LOW);
-  showLCD(l1, l2);
-  beep(100, 3);
-  delay(1500);
-  digitalWrite(LED_RED, LOW);
-}
-
-void queueEvent(const String& type, const String& key = "", int slotId = -1, const String& tplRef = "") {
-  pendingEventType = type;
-  pendingEventKey  = key;
-  pendingSlotId    = slotId;
-  pendingTemplateRef = tplRef;
-}
-
+// ============================================================
+// HELPER: Find next free fingerprint slot
+// ============================================================
 int findNextFreeSlot() {
-  for (int id = 1; id <= 1000; id++) {
-    if (finger.loadModel(id) != FINGERPRINT_OK) {
-      return id;
+  for (int i = 1; i <= sensorCapacity; i++) {
+    if (finger.loadModel(i) != FINGERPRINT_OK) {
+      return i; // slot is empty
     }
   }
-  return 1;
+  return -1; // sensor full
 }
 
-bool initR307Sensor() {
-  // Try standard pins: RX=16 (Yellow TXD), TX=17 (White RXD) at 57600 baud
-  r307Serial.begin(57600, SERIAL_8N1, R307_RX_PIN, R307_TX_PIN);
-  delay(600);
-  finger.begin(57600);
-  for (int attempt = 0; attempt < 3; attempt++) {
+// ============================================================
+// SENSOR INIT: Try multiple baud rates
+// ============================================================
+bool initFPM10ASensor() {
+  Serial.println("[FPM10A] Initializing sensor (auto-detecting baud rate)...");
+
+  for (int b = 0; b < BAUD_COUNT; b++) {
+    uint32_t baud = BAUD_CANDIDATES[b];
+    Serial.printf("[FPM10A] Trying baud rate: %lu\n", baud);
+    fpSerial.begin(baud, SERIAL_8N1, FP_RX_PIN, FP_TX_PIN);
+    delay(300);
+    finger.begin(baud);
+    delay(200);
+
     if (finger.verifyPassword()) {
+      activeBaud = baud;
+      Serial.printf("[FPM10A] ✓ Sensor found at %lu baud!\n", baud);
       sensorReady = true;
+
+      // Read template count
+      if (finger.getParameters() == FINGERPRINT_OK) {
+        sensorCapacity = finger.capacity;
+        Serial.printf("[FPM10A] Capacity: %d templates, Status: %d\n", sensorCapacity, finger.status_reg);
+      }
+
+      lcdPrint("FPM10A Ready", "PDS System v3");
+      Serial.printf("FPM10A_READY:%d\n", sensorCapacity);
+      Serial.printf("R307_READY:%d\n", sensorCapacity); // backward compat alias
+
       return true;
     }
-    delay(250);
+
+    fpSerial.end();
+    delay(200);
   }
 
-  // Fallback: Try swapped TX/RX pins (RX=17, TX=16) in case Yellow/White wires are reversed
-  r307Serial.end();
-  delay(100);
-  r307Serial.begin(57600, SERIAL_8N1, R307_TX_PIN, R307_RX_PIN);
-  delay(500);
-  finger.begin(57600);
-  if (finger.verifyPassword()) {
-    sensorReady = true;
-    Serial.println("R307_INFO:Detected with swapped RX/TX (17/16)");
-    return true;
-  }
-
-  // Restore default pins
-  r307Serial.end();
-  r307Serial.begin(57600, SERIAL_8N1, R307_RX_PIN, R307_TX_PIN);
-  sensorReady = false;
+  Serial.println("[FPM10A] ✗ Sensor not found on any baud rate.");
+  Serial.println("[FPM10A] Check: 5V VCC, TXD→GPIO16, RXD→GPIO17");
+  lcdPrint("Sensor Error", "Check Wiring!");
   return false;
 }
 
-// ==================== R307 AUTHENTICATION ====================
-
-// Performs one non-blocking or short-check scan on R307.
-// Returns matched Slot ID (>0) or -1 if no finger / no match.
-int scanR307Once(bool showNoMatchError = true) {
+// ============================================================
+// FINGERPRINT SCAN: Returns slot ID on match
+// ============================================================
+int scanFingerprint() {
   if (!sensorReady) return -1;
 
-  uint8_t p = finger.getImage();
-  if (p != FINGERPRINT_OK) return -1;
+  int result = finger.getImage();
+  if (result != FINGERPRINT_OK) return 0; // No finger yet
 
-  p = finger.image2Tz();
-  if (p != FINGERPRINT_OK) return -1;
+  result = finger.image2Tz();
+  if (result != FINGERPRINT_OK) return -2;
 
-  p = finger.fingerFastSearch();
-  if (p != FINGERPRINT_OK) {
-    if (showNoMatchError) {
-      Serial.println("R307_NO_MATCH");
-      signalError("AUTH FAILED", "No Finger Match");
-    }
-    return -1;
+  result = finger.fingerSearch();
+  if (result == FINGERPRINT_OK) {
+    return finger.fingerID; // matched slot
   }
-
-  int slotId = finger.fingerID;
-  String templateRef = "FP-R307-SLOT" + String(slotId);
-
-  // Send exact protocol expected by frontend/js/esp32-connection.js
-  Serial.println("R307_MATCH:" + String(slotId) + ":" + templateRef);
-  queueEvent("MATCH", "", slotId, templateRef);
-
-  signalSuccess("VERIFIED #" + String(slotId), "Conf: " + String(finger.confidence));
-  return slotId;
+  return -3; // no match
 }
 
-// Blocking scan used when Web Dashboard sends CMD:SCAN or POST /scan
-int waitAndScanR307(unsigned long timeoutMs = 10000) {
-  if (!sensorReady && !initR307Sensor()) {
-    Serial.println("R307_NO_MATCH");
-    signalError("R307 NOT FOUND", "Check 5V & Wires");
-    return -1;
-  }
-  showLCD("PLACE FINGER", "On R307 Sensor..");
-  unsigned long start = millis();
+// ============================================================
+// FINGERPRINT ENROLLMENT: 2-scan process
+// ============================================================
+bool enrollFingerprint(int slot) {
+  Serial.printf("[FPM10A] Starting enrollment into slot %d\n", slot);
+  lcdPrint("Place Finger", "Scan 1 of 2...");
 
-  while (millis() - start < timeoutMs) {
-    if (WiFi.status() == WL_CONNECTED) ipServer.handleClient();
-
-    uint8_t p = finger.getImage();
-    if (p == FINGERPRINT_OK) {
-      p = finger.image2Tz();
-      if (p != FINGERPRINT_OK) {
-        signalError("IMAGE ERROR", "Try Again");
-        return -1;
-      }
-      p = finger.fingerFastSearch();
-      if (p == FINGERPRINT_OK) {
-        int slotId = finger.fingerID;
-        String templateRef = "FP-R307-SLOT" + String(slotId);
-        Serial.println("R307_MATCH:" + String(slotId) + ":" + templateRef);
-        queueEvent("MATCH", "", slotId, templateRef);
-        signalSuccess("MATCH SLOT #" + String(slotId), "Access Granted");
-        return slotId;
-      } else {
-        Serial.println("R307_NO_MATCH");
-        signalError("NO MATCH FOUND", "Unregistered");
-        return -1;
-      }
-    }
-    delay(80);
-  }
-
-  Serial.println("R307_NO_MATCH");
-  signalError("SCAN TIMEOUT", "No Finger Placed");
-  return -1;
-}
-
-// ==================== R307 ENROLLMENT ====================
-
-bool enrollR307Slot(int slotId, const String& customerId = "", const String& memberId = "head") {
-  if (!sensorReady && !initR307Sensor()) {
-    Serial.println("ENROLL_ERR:R307 not detected on GPIO16/17 (Check 5V VCC & Yellow/White wires)");
-    signalError("R307 NOT READY", "Check 5V & UART");
+  // === SCAN 1 ===
+  unsigned long t = millis();
+  while (millis() - t < 20000) {   // 20-second timeout
+    int r = finger.getImage();
+    if (r == FINGERPRINT_OK) break;
+    if (r == FINGERPRINT_NOFINGER) { delay(100); continue; }
+    Serial.printf("ENROLL_ERR:Image1 error (%d)\n", r);
     return false;
   }
-  if (slotId <= 0) slotId = findNextFreeSlot();
-
-  currentMode = MODE_ENROLLING;
-  Serial.println("ENROLL_START:" + String(slotId));
-  showLCD("ENROLL SLOT #" + String(slotId), "Place Finger...");
-
-  // Step 1: Wait for first finger placement
-  unsigned long start = millis();
-  int p = -1;
-  while (p != FINGERPRINT_OK) {
-    if (millis() - start > 15000) {
-      Serial.println("ENROLL_ERR:Timeout waiting for 1st scan");
-      signalError("ENROLL TIMEOUT", "Try Again");
-      currentMode = MODE_IDLE_AUTH;
-      return false;
-    }
-    p = finger.getImage();
-    delay(50);
+  if (millis() - t >= 20000) {
+    Serial.println("ENROLL_ERR:Timeout on 1st scan. Check 5V VCC & TXD→GPIO16 wiring.");
+    return false;
   }
 
   if (finger.image2Tz(1) != FINGERPRINT_OK) {
-    Serial.println("ENROLL_ERR:Image 1 conversion failed");
-    signalError("SCAN 1 ERROR", "Clean Sensor");
-    currentMode = MODE_IDLE_AUTH;
+    Serial.println("ENROLL_ERR:Failed to convert 1st fingerprint image.");
     return false;
   }
 
-  beep(80, 1);
-  showLCD("REMOVE FINGER", "Wait...");
-  delay(1500);
-  while (finger.getImage() != FINGERPRINT_NOFINGER) {
-    delay(50);
+  lcdPrint("Remove Finger", "...");
+  Serial.println("[FPM10A] 1st scan OK. Remove finger...");
+  delay(2500);  // DY50 needs longer gap between scans
+
+  // Wait for finger removal
+  t = millis();
+  while (millis() - t < 8000) {
+    if (finger.getImage() == FINGERPRINT_NOFINGER) break;
+    delay(200);
   }
 
-  // Step 2: Wait for second finger placement
-  showLCD("PLACE SAME", "FINGER AGAIN...");
-  start = millis();
-  p = -1;
-  while (p != FINGERPRINT_OK) {
-    if (millis() - start > 15000) {
-      Serial.println("ENROLL_ERR:Timeout waiting for 2nd scan");
-      signalError("ENROLL TIMEOUT", "Try Again");
-      currentMode = MODE_IDLE_AUTH;
-      return false;
-    }
-    p = finger.getImage();
-    delay(50);
+  // === SCAN 2 ===
+  lcdPrint("Place Finger", "Scan 2 of 2...");
+  Serial.println("[FPM10A] Place same finger again (2nd scan)...");
+
+  t = millis();
+  while (millis() - t < 20000) {   // 20-second timeout for 2nd scan
+    int r = finger.getImage();
+    if (r == FINGERPRINT_OK) break;
+    if (r == FINGERPRINT_NOFINGER) { delay(100); continue; }
+    Serial.printf("ENROLL_ERR:Image2 error (%d)\n", r);
+    return false;
+  }
+  if (millis() - t >= 20000) {
+    Serial.println("ENROLL_ERR:Timeout on 2nd scan. Check 5V VCC & TXD→GPIO16 wiring.");
+    return false;
   }
 
   if (finger.image2Tz(2) != FINGERPRINT_OK) {
-    Serial.println("ENROLL_ERR:Image 2 conversion failed");
-    signalError("SCAN 2 ERROR", "Try Again");
-    currentMode = MODE_IDLE_AUTH;
+    Serial.println("ENROLL_ERR:Failed to convert 2nd fingerprint image.");
     return false;
   }
 
-  // Step 3: Create and store template in R307 Flash
+  // Create model from both scans
   if (finger.createModel() != FINGERPRINT_OK) {
-    Serial.println("ENROLL_ERR:Fingerprints did not match");
-    signalError("MISMATCH ERROR", "Use Same Finger");
-    currentMode = MODE_IDLE_AUTH;
+    Serial.println("ENROLL_ERR:Fingerprints did not match. Please try again.");
     return false;
   }
 
-  if (finger.storeModel(slotId) != FINGERPRINT_OK) {
-    Serial.println("ENROLL_ERR:Flash store failed");
-    signalError("STORAGE ERROR", "R307 Flash Full");
-    currentMode = MODE_IDLE_AUTH;
+  // Store model in sensor
+  if (finger.storeModel(slot) != FINGERPRINT_OK) {
+    Serial.printf("ENROLL_ERR:Failed to store template in slot %d.\n", slot);
     return false;
   }
 
-  String templateRef = "FP-R307-SLOT" + String(slotId);
-  Serial.println("ENROLL_OK:" + String(slotId) + ":" + templateRef);
-  signalSuccess("ENROLLED #" + String(slotId), templateRef);
-
-  // Optional: notify backend if WiFi is connected and customerId provided
-  if (WiFi.status() == WL_CONNECTED && customerId.length() > 0) {
-    HTTPClient http;
-    http.begin(String(BACKEND_URL) + "/enroll/complete");
-    http.addHeader("Content-Type", "application/json");
-    http.addHeader("X-Device-Token", DEVICE_TOKEN);
-    StaticJsonDocument<256> doc;
-    doc["customerId"] = customerId;
-    doc["memberId"] = memberId;
-    doc["slotId"] = slotId;
-    doc["templateRef"] = templateRef;
-    String payload;
-    serializeJson(doc, payload);
-    http.POST(payload);
-    http.end();
-  }
-
-  currentMode = MODE_IDLE_AUTH;
-  showIdleLCD();
+  String tplRef = "FP-DY50-SLOT" + String(slot);
+  lcdPrint("Enrolled!", tplRef.c_str());
+  Serial.printf("ENROLL_OK:%d:%s\n", slot, tplRef.c_str());
   return true;
 }
 
-void showIdleLCD() {
-  if (keypadBuffer.length() > 0) {
-    showLCD("ID: " + keypadBuffer, "#:OK  *:CLR");
-  } else {
-    showLCD("SMART PDS R307", "Scan or Enter ID");
+// ============================================================
+// KEYPAD SCAN
+// ============================================================
+char readKeypad() {
+  for (int r = 0; r < 4; r++) {
+    digitalWrite(ROW_PINS[r], LOW);
+    for (int c = 0; c < 4; c++) {
+      if (digitalRead(COL_PINS[c]) == LOW) {
+        delay(50); // debounce
+        while (digitalRead(COL_PINS[c]) == LOW) {}
+        digitalWrite(ROW_PINS[r], HIGH);
+        return KEY_MAP[r][c];
+      }
+    }
+    digitalWrite(ROW_PINS[r], HIGH);
   }
+  return 0;
 }
 
-// ==================== USB SERIAL COMMAND HANDLER ====================
+// ============================================================
+// USB SERIAL COMMAND PARSER
+// ============================================================
+String serialBuffer = "";
 
-void handleUSBCommand(String cmd) {
-  if (cmd.length() == 0) return;
+void processSerialLine(String line) {
+  line.trim();
+  Serial.printf("[CMD] Received: %s\n", line.c_str());
 
-  if (cmd == "CMD:SCAN") {
-    waitAndScanR307(10000);
-    showIdleLCD();
-  }
-  else if (cmd == "CMD:STATUS") {
-    Serial.println("STATUS:READY:" + String(OFFICE_ID) + ":" + (sensorReady ? "R307_OK" : "R307_ERR"));
-  }
-  else if (cmd.startsWith("CMD:ENROLL")) {
-    // Format: CMD:ENROLL or CMD:ENROLL:<slotId>
-    int slot = -1;
-    int colonIdx = cmd.indexOf(':', 4);
-    if (colonIdx > 0) {
-      slot = cmd.substring(colonIdx + 1).toInt();
+  if (line == "CMD:STATUS") {
+    if (sensorReady) {
+      Serial.printf("FPM10A_READY:%d\n", sensorCapacity);
+      Serial.printf("R307_READY:%d\n", sensorCapacity); // backward compat
+    } else {
+      Serial.println("FPM10A_NOT_READY");
+      Serial.println("R307_NOT_READY");
     }
-    enrollR307Slot(slot);
   }
-  else if (cmd.startsWith("ENROLL:")) {
+  else if (line == "CMD:SCAN") {
+    if (!sensorReady) {
+      Serial.println("FPM10A_NO_MATCH");
+      Serial.println("R307_NO_MATCH");
+      return;
+    }
+    lcdPrint("Place Finger", "Scanning...");
+    // Wait up to 10s for a finger then search
+    unsigned long t = millis();
+    bool found = false;
+    while (millis() - t < 10000) {
+      int r = finger.getImage();
+      if (r == FINGERPRINT_OK) {
+        if (finger.image2Tz() == FINGERPRINT_OK && finger.fingerSearch() == FINGERPRINT_OK) {
+          String tRef = "FP-DY50-SLOT" + String(finger.fingerID);
+          Serial.printf("FPM10A_MATCH:%d:%s\n", finger.fingerID, tRef.c_str());
+          Serial.printf("R307_MATCH:%d:%s\n", finger.fingerID, tRef.c_str()); // backward compat
+          lcdPrint("Match Found!", tRef.c_str());
+          found = true;
+          break;
+        } else {
+          Serial.println("FPM10A_NO_MATCH");
+          Serial.println("R307_NO_MATCH");
+          lcdPrint("No Match", "Try Again");
+          found = true;
+          break;
+        }
+      }
+      delay(100);
+    }
+    if (!found) {
+      Serial.println("FPM10A_NO_MATCH");
+      Serial.println("R307_NO_MATCH");
+    }
+  }
+  else if (line.startsWith("ENROLL:")) {
     // Format: ENROLL:<sessionId>:<customerId>:<memberId>
-    int c1 = cmd.indexOf(':');
-    int c2 = cmd.indexOf(':', c1 + 1);
-    int c3 = cmd.indexOf(':', c2 + 1);
-    String custId = (c2 > 0 && c3 > c2) ? cmd.substring(c2 + 1, c3) : "";
-    String memId  = (c3 > 0) ? cmd.substring(c3 + 1) : "head";
-    enrollR307Slot(-1, custId, memId);
-  }
-  else if (cmd.startsWith("LCD:")) {
-    String msg = cmd.substring(4);
-    int sep = msg.indexOf('|');
-    if (sep >= 0) {
-      showLCD(msg.substring(0, sep), msg.substring(sep + 1));
-    } else {
-      showLCD(msg, "");
+    String parts[4];
+    int partIdx = 0;
+    int start = 7;
+    for (int i = 7; i <= line.length() && partIdx < 3; i++) {
+      if (i == line.length() || line[i] == ':') {
+        parts[partIdx++] = line.substring(start, i);
+        start = i + 1;
+      }
     }
-  }
-}
+    parts[partIdx] = line.substring(start);
 
-// ==================== WIFI IP WEBSERVER ENDPOINTS ====================
-
-void sendCORSHeaders() {
-  ipServer.sendHeader("Access-Control-Allow-Origin", "*");
-  ipServer.sendHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
-  ipServer.sendHeader("Access-Control-Allow-Headers", "Content-Type, X-Device-Token");
-}
-
-void setupWebServerEndpoints() {
-  ipServer.on("/status", HTTP_OPTIONS, []() { sendCORSHeaders(); ipServer.send(204); });
-  ipServer.on("/poll",   HTTP_OPTIONS, []() { sendCORSHeaders(); ipServer.send(204); });
-  ipServer.on("/scan",   HTTP_OPTIONS, []() { sendCORSHeaders(); ipServer.send(204); });
-  ipServer.on("/enroll", HTTP_OPTIONS, []() { sendCORSHeaders(); ipServer.send(204); });
-
-  ipServer.on("/status", HTTP_GET, []() {
-    sendCORSHeaders();
-    StaticJsonDocument<256> doc;
-    doc["status"] = "ONLINE";
-    doc["device"] = "ESP32-R307-POS";
-    doc["sensor"] = sensorReady ? "R307 Optical" : "R307 Error";
-    doc["officeId"] = OFFICE_ID;
-    doc["ip"] = WiFi.localIP().toString();
-    String out;
-    serializeJson(doc, out);
-    ipServer.send(200, "application/json", out);
-  });
-
-  ipServer.on("/poll", HTTP_GET, []() {
-    sendCORSHeaders();
-    StaticJsonDocument<256> doc;
-    doc["type"] = pendingEventType;
-    if (pendingEventType == "KEY") {
-      doc["key"] = pendingEventKey;
-    } else if (pendingEventType == "MATCH") {
-      doc["slotId"] = pendingSlotId;
-      doc["templateRef"] = pendingTemplateRef;
-    }
-    // Clear queue once read
-    pendingEventType = "NONE";
-    pendingEventKey  = "";
-    pendingSlotId    = -1;
-    pendingTemplateRef = "";
-
-    String out;
-    serializeJson(doc, out);
-    ipServer.send(200, "application/json", out);
-  });
-
-  ipServer.on("/scan", HTTP_POST, []() {
-    sendCORSHeaders();
-    int slotId = waitAndScanR307(10000);
-    showIdleLCD();
-    StaticJsonDocument<256> doc;
-    if (slotId > 0) {
-      doc["success"] = true;
-      doc["slotId"] = slotId;
-      doc["templateRef"] = "FP-R307-SLOT" + String(slotId);
-      String out;
-      serializeJson(doc, out);
-      ipServer.send(200, "application/json", out);
-    } else {
-      doc["success"] = false;
-      doc["message"] = "Fingerprint not matched or timed out";
-      String out;
-      serializeJson(doc, out);
-      ipServer.send(200, "application/json", out);
-    }
-  });
-
-  ipServer.on("/enroll", HTTP_POST, []() {
-    sendCORSHeaders();
     int slot = findNextFreeSlot();
-    bool ok = enrollR307Slot(slot);
-    StaticJsonDocument<256> doc;
-    doc["success"] = ok;
-    doc["slotId"] = slot;
-    doc["templateRef"] = "FP-R307-SLOT" + String(slot);
-    String out;
-    serializeJson(doc, out);
-    ipServer.send(200, "application/json", out);
-  });
+    if (slot < 1) {
+      Serial.println("ENROLL_ERR:Sensor storage full (162 templates max).");
+      return;
+    }
+
+    enrollSession = {true, parts[0], parts[1], parts[2], slot};
+    bool ok = enrollFingerprint(slot);
+    enrollSession.active = false;
+
+    if (!ok) {
+      // Error already printed inside enrollFingerprint()
+    }
+  }
 }
 
-// ==================== SETUP & MAIN LOOP ====================
+void readSerialInput() {
+  while (Serial.available()) {
+    char c = Serial.read();
+    if (c == '\n' || c == '\r') {
+      if (serialBuffer.length() > 0) {
+        processSerialLine(serialBuffer);
+        serialBuffer = "";
+      }
+    } else {
+      serialBuffer += c;
+    }
+  }
+}
 
+// ============================================================
+// WIFI HTTP SERVER ROUTES
+// ============================================================
+void setupWebServer() {
+  server.on("/status", HTTP_GET, []() {
+    String json = "{\"device\":\"ESP32-FPM10A-PDS\",\"sensor\":\"FPM10A DY50 Optical\",";
+    json += "\"ready\":" + String(sensorReady ? "true" : "false") + ",";
+    json += "\"capacity\":" + String(sensorCapacity) + ",";
+    json += "\"baud\":" + String(activeBaud) + "}";
+    server.sendHeader("Access-Control-Allow-Origin", "*");
+    server.send(200, "application/json", json);
+  });
+
+  server.on("/scan", HTTP_POST, []() {
+    if (!sensorReady) {
+      server.sendHeader("Access-Control-Allow-Origin", "*");
+      server.send(200, "application/json", "{\"success\":false,\"error\":\"Sensor not ready\"}");
+      return;
+    }
+    int slot = scanFingerprint();
+    String json;
+    if (slot > 0) {
+      json = "{\"success\":true,\"slotId\":" + String(slot) + ",\"templateRef\":\"FP-DY50-SLOT" + String(slot) + "\"}";
+    } else {
+      json = "{\"success\":false,\"error\":\"No fingerprint match\"}";
+    }
+    server.sendHeader("Access-Control-Allow-Origin", "*");
+    server.send(200, "application/json", json);
+  });
+
+  server.on("/enroll", HTTP_POST, []() {
+    if (!sensorReady) {
+      server.sendHeader("Access-Control-Allow-Origin", "*");
+      server.send(200, "application/json", "{\"success\":false,\"error\":\"Sensor not ready\"}");
+      return;
+    }
+    int slot = findNextFreeSlot();
+    if (slot < 1) {
+      server.sendHeader("Access-Control-Allow-Origin", "*");
+      server.send(200, "application/json", "{\"success\":false,\"error\":\"Sensor full\"}");
+      return;
+    }
+
+    bool ok = enrollFingerprint(slot);
+    String json;
+    if (ok) {
+      json = "{\"success\":true,\"slotId\":" + String(slot) + ",\"templateRef\":\"FP-DY50-SLOT" + String(slot) + "\"}";
+    } else {
+      json = "{\"success\":false,\"error\":\"Enrollment failed\"}";
+    }
+    server.sendHeader("Access-Control-Allow-Origin", "*");
+    server.send(200, "application/json", json);
+  });
+
+  server.on("/poll", HTTP_GET, []() {
+    // Returns keypad events if any
+    if (keypadBuffer.length() > 0 && millis() - lastKeyTime < 500) {
+      String key = keypadBuffer.substring(keypadBuffer.length() - 1);
+      String json = "{\"type\":\"KEY\",\"key\":\"" + key + "\"}";
+      server.sendHeader("Access-Control-Allow-Origin", "*");
+      server.send(200, "application/json", json);
+    } else {
+      server.sendHeader("Access-Control-Allow-Origin", "*");
+      server.send(200, "application/json", "{\"type\":\"IDLE\"}");
+    }
+  });
+
+  server.onNotFound([]() {
+    server.sendHeader("Access-Control-Allow-Origin", "*");
+    server.send(404, "application/json", "{\"error\":\"Route not found\"}");
+  });
+
+  server.begin();
+  Serial.println("[WiFi] HTTP server started on port 80");
+}
+
+// ============================================================
+// SETUP
+// ============================================================
 void setup() {
+  // USB Serial (for browser Web Serial API)
   Serial.begin(115200);
   delay(500);
+  Serial.println("\n========================================");
+  Serial.println(" Smart PDS ESP32 Firmware v3.0");
+  Serial.println(" Sensor: FPM10A / DY50");
+  Serial.println("========================================");
 
-  pinMode(LED_GREEN, OUTPUT);
-  pinMode(LED_RED, OUTPUT);
-  pinMode(BUZZER, OUTPUT);
-
-  // Initialize I2C LCD
-  Wire.begin(21, 22);
+  // LCD Init
+  Wire.begin(21, 22); // SDA=21, SCL=22 (default ESP32)
   lcd.init();
   lcd.backlight();
-  showLCD("SMART PDS R307", "Booting Node...");
+  lcdAvailable = true;
+  lcdPrint("Smart PDS v3.0", "Initializing...");
 
-  // Connect WiFi (non-blocking timeout so USB mode works offline too)
-  if (String(WIFI_SSID) != "YOUR_WIFI_SSID") {
-    WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
-    int tries = 0;
-    while (WiFi.status() != WL_CONNECTED && tries < 12) {
-      delay(400);
-      tries++;
-    }
+  // Keypad
+  for (int r = 0; r < 4; r++) {
+    pinMode(ROW_PINS[r], OUTPUT);
+    digitalWrite(ROW_PINS[r], HIGH);
+  }
+  for (int c = 0; c < 4; c++) {
+    pinMode(COL_PINS[c], INPUT_PULLUP);
   }
 
+  // FPM10A Sensor Init
+  if (!initFPM10ASensor()) {
+    Serial.println("[WARN] FPM10A not detected. System running without biometrics.");
+    Serial.println("[WARN] Check: 5V VCC, TXD→GPIO16, RXD→GPIO17, secure JST connector");
+  }
+
+  // WiFi (optional — comment out if not needed)
+  Serial.printf("[WiFi] Connecting to %s...\n", WIFI_SSID);
+  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+  int wifiAttempts = 0;
+  while (WiFi.status() != WL_CONNECTED && wifiAttempts < 20) {
+    delay(500);
+    Serial.print(".");
+    wifiAttempts++;
+  }
   if (WiFi.status() == WL_CONNECTED) {
-    Serial.println("[WiFi] Connected! IP: " + WiFi.localIP().toString());
-    showLCD("WiFi IP Mode", WiFi.localIP().toString());
-    setupWebServerEndpoints();
-    ipServer.begin();
-    delay(1200);
+    wifiConnected = true;
+    Serial.printf("\n[WiFi] Connected! IP: %s\n", WiFi.localIP().toString().c_str());
+    lcdPrint("WiFi Connected", WiFi.localIP().toString().c_str());
+    setupWebServer();
+    delay(1500);
   } else {
-    Serial.println("[USB] WiFi skipped/offline. USB Web Serial Mode Ready.");
+    Serial.println("\n[WiFi] Not connected. Using USB Serial mode only.");
+    lcdPrint("WiFi Failed", "USB Mode Only");
+    delay(1000);
   }
 
-  // Initialize R307 Optical Fingerprint Sensor (57600 baud, with retry & pin-swap auto-detect)
-  if (initR307Sensor()) {
-    finger.getParameters();
-    Serial.println("R307_READY:Sensor OK. Capacity=" + String(finger.capacity));
-    signalSuccess("R307 READY", "Cap: " + String(finger.capacity) + " Prints");
+  if (sensorReady) {
+    lcdPrint("Ready! Place", "Finger or Key");
   } else {
-    Serial.println("R307_ERROR:Check 5V VCC, Yellow->GPIO16, White->GPIO17");
-    signalError("R307 ERROR", "Check 5V & UART");
+    lcdPrint("No Sensor!", "USB Bridge OK");
   }
 
-  showIdleLCD();
+  Serial.println("[PDS] System ready. Waiting for commands...");
 }
 
+// ============================================================
+// MAIN LOOP
+// ============================================================
+unsigned long lastAutoScan = 0;
+
 void loop() {
-  // 1. Handle WiFi HTTP Server (IP Mode)
-  if (WiFi.status() == WL_CONNECTED) {
-    ipServer.handleClient();
+  // 1. Handle USB serial commands from browser
+  readSerialInput();
+
+  // 2. Handle WiFi HTTP requests
+  if (wifiConnected) {
+    server.handleClient();
   }
 
-  // 2. Handle USB Serial Commands from Web Portal
-  if (Serial.available()) {
-    String cmd = Serial.readStringUntil('\n');
-    cmd.trim();
-    handleUSBCommand(cmd);
-  }
-
-  // 3. Handle 4x4 Matrix Keypad Input
-  char key = keypad.getKey();
-  if (key) {
-    beep(40, 1);
-    Serial.println("KEY:" + String(key));
-    queueEvent("KEY", String(key));
-
-    if (key == '*') {
-      keypadBuffer = "";
-      currentMode = MODE_IDLE_AUTH;
-      showIdleLCD();
-    } else if (key == '#') {
-      if (keypadBuffer.length() > 0) {
-        currentMode = MODE_SCANNING_AUTH;
-        showLCD("ID: " + keypadBuffer, "Place Finger...");
-      }
-    } else {
-      // Allow 0-9 and A, B, C, D as Customer ID characters
-      if (keypadBuffer.length() < 14) {
-        keypadBuffer += key;
-        showIdleLCD();
+  // 3. Auto-scan fingerprint every 1 second (passive mode, not during enrollment)
+  if (sensorReady && !enrollSession.active && millis() - lastAutoScan > 1000) {
+    lastAutoScan = millis();
+    if (finger.getImage() == FINGERPRINT_OK) {
+      if (finger.image2Tz() == FINGERPRINT_OK) {
+        if (finger.fingerSearch() == FINGERPRINT_OK) {
+          String tRef = "FP-DY50-SLOT" + String(finger.fingerID);
+          Serial.printf("FPM10A_MATCH:%d:%s\n", finger.fingerID, tRef.c_str());
+          Serial.printf("R307_MATCH:%d:%s\n", finger.fingerID, tRef.c_str()); // compat
+          lcdPrint("Matched!", tRef.c_str());
+          delay(2000);
+          lcdPrint("Ready! Place", "Finger or Key");
+        } else {
+          Serial.println("FPM10A_NO_MATCH");
+          Serial.println("R307_NO_MATCH");
+          lcdPrint("No Match", "Try Again");
+          delay(1500);
+          lcdPrint("Ready! Place", "Finger or Key");
+        }
       }
     }
   }
 
-  // 4. Passive R307 Finger Scan (detects finger placed anytime in Idle/Auth mode)
-  if (sensorReady && currentMode != MODE_ENROLLING) {
-    int matched = scanR307Once(true);
-    if (matched > 0) {
-      keypadBuffer = "";
-      currentMode = MODE_IDLE_AUTH;
-      showIdleLCD();
-    }
+  // 4. Keypad scan
+  char key = readKeypad();
+  if (key != 0) {
+    Serial.printf("KEY:%c\n", key);
+    keypadBuffer += key;
+    lastKeyTime = millis();
+    lcdPrint("Key Pressed:", String(key).c_str());
+    delay(200);
+    lcdPrint("Ready! Place", "Finger or Key");
   }
-
-  delay(40);
 }

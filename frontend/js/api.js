@@ -14,6 +14,10 @@ const localBackendOrigin = `http://${isFileProtocol ? 'localhost' : window.locat
 // Custom API Gateway override if user hosts backend on Render/Railway/Fly
 const customBackendUrl = localStorage.getItem('pds_backend_api_url');
 
+// Use PDSClientDB directly when: GitHub Pages, file://, or no custom backend configured.
+// Only use the real backend when explicitly on localhost:5000 (npm start).
+const USE_CLIENT_DB_DIRECTLY = !customBackendUrl && (isGitHubPages || isFileProtocol || isDevLiveServer);
+
 const API_BASE = customBackendUrl
   ? customBackendUrl.replace(/\/$/, '')
   : isFileProtocol
@@ -62,12 +66,12 @@ function showToast(message, type = 'info', duration = 3500) {
 
 // Global API Request Helper (Hybrid: Real Node.js Server + GitHub Pages Client Engine)
 async function apiRequest(endpoint, options = {}) {
-  // 1. If running natively on GitHub Pages without a remote backend, use client database directly
-  if (isGitHubPages && !customBackendUrl && window.PDSClientDB) {
+  // 1. Use PDSClientDB directly when: GitHub Pages, file://, or Live Server without backend
+  if (USE_CLIENT_DB_DIRECTLY && window.PDSClientDB) {
     try {
       return await window.PDSClientDB.handleApi(endpoint, options);
     } catch (err) {
-      console.error(`[GitHub Pages Direct Engine] Error on ${endpoint}:`, err);
+      console.error(`[ClientDB Direct Engine] Error on ${endpoint}:`, err);
       throw err;
     }
   }

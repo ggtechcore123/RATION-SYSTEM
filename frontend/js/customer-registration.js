@@ -356,8 +356,8 @@ async function triggerBiometricScan(forceSimulator = false) {
     pad.classList.remove('scanning');
     badge.className = 'badge badge-danger';
     badge.textContent = 'HARDWARE SENSOR ERROR';
-    title.textContent = 'R307 Sensor Not Detected / Timed Out';
-    desc.innerHTML = `${err.message}. Check 5V VCC &amp; Yellow/White UART wires, or <a href="javascript:void(0)" onclick="triggerBiometricScan(true)" style="color: var(--blue-primary); font-weight: 700; text-decoration: underline;">click here to enroll via Software R307 Simulator</a>.`;
+    title.textContent = 'FPM10A/DY50 Sensor Not Detected / Timed Out';
+    desc.innerHTML = `${err.message}. Check 5V VCC, TXD→GPIO16, RXD→GPIO17, or <a href="javascript:void(0)" onclick="triggerBiometricScan(true)" style="color: var(--blue-primary); font-weight: 700; text-decoration: underline;">click here to enroll via Software Simulator</a>.`;
     showToast(`Biometric enrollment failed: ${err.message}`, 'error');
   }
 }
@@ -394,14 +394,16 @@ async function handleFileUpload(input, docKey) {
 async function submitRegistration() {
   const familyMembers = getCollectedFamilyMembers();
   const headBio = enrolledBiometrics['head'] || {};
-  const headFp = headBio.templateRef || `FP-R307-SLOT${headBio.slotId || Date.now().toString().slice(-3)}`;
+  const headFp = headBio.templateRef || `FP-DY50-SLOT${headBio.slotId || Date.now().toString().slice(-3)}`;
 
   const payload = {
     fullName: document.getElementById('reg-fullName').value.trim(),
     dateOfBirth: document.getElementById('reg-dob').value,
     gender: document.getElementById('reg-gender').value,
     mobileNumber: document.getElementById('reg-mobile').value.trim(),
+    emailAddress: document.getElementById('reg-email').value.trim(),
     email: document.getElementById('reg-email').value.trim(),
+    residentialAddress: document.getElementById('reg-address').value.trim(),
     address: document.getElementById('reg-address').value.trim(),
     state: document.getElementById('reg-state').value,
     district: document.getElementById('reg-district').value.trim(),
@@ -429,11 +431,12 @@ async function submitRegistration() {
 
     if (result.success) {
       // Populate Confirmation Step
-      document.getElementById('conf-customerId').textContent = result.customerId;
+      const cust = result.customer || {};
+      document.getElementById('conf-customerId').textContent = result.customerId || cust.customerId || 'N/A';
       document.getElementById('conf-cardNo').textContent = payload.rationCardNumber;
       document.getElementById('conf-fullName').textContent = payload.fullName;
       document.getElementById('conf-category').textContent = payload.rationCardCategory;
-      document.getElementById('conf-office').textContent = (result.customer && result.customer.assignedOfficeName) || payload.assignedOfficeId;
+      document.getElementById('conf-office').textContent = cust.assignedOfficeName || payload.assignedOfficeId || 'N/A';
       document.getElementById('conf-memberCount').textContent = `${payload.numberOfFamilyMembers} (Head + ${familyMembers.length} Members)`;
       document.getElementById('conf-fpRef').textContent = headFp;
 
